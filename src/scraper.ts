@@ -206,7 +206,7 @@ async function main() {
 
     const movieLinks = await scrapeLetterboxdPage(url);
     for (let i = 0; i < movieLinks.length; i++) {
-      console.log(`\n📽️ Película ${i + 1} de ${movieLinks.length}`);
+      console.log(`\n📽️  Película ${i + 1} de ${movieLinks.length}`);
       const details = await scrapeMovieDetails(movieLinks[i].link, browser);
       movies.push(details);
     }
