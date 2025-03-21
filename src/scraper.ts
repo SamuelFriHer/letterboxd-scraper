@@ -1,80 +1,224 @@
-import puppeteer from 'puppeteer';
 import fs from 'fs';
-import Papa from 'papaparse';
+import { createObjectCsvWriter } from 'csv-writer';
+import readlineSync from 'readline-sync';
+import puppeteer, { Browser } from 'puppeteer';
+import path from 'path';
 
-// Obtener argumentos de la línea de comandos
-const args = process.argv.slice(2);
-let filterType = 'popular';
-let filterValue = '';
-let maxPages = 1;
-
-// Manejar casos de argumentos
-if (args.length === 1) {
-  // Solo "popular" o número de páginas
-  if (!isNaN(parseInt(args[0]))) {
-    maxPages = parseInt(args[0]);
-  } else {
-    filterType = args[0];
-  }
-} else if (args.length === 2) {
-  if (!isNaN(parseInt(args[1]))) {
-    filterType = args[0];
-    maxPages = parseInt(args[1]);
-  } else {
-    filterType = args[0];
-    filterValue = args[1];
-  }
-} else if (args.length === 3) {
-  filterType = args[0];
-  filterValue = args[1];
-  maxPages = parseInt(args[2]);
+interface MovieDetails {
+  title: string;
+  year: string;
+  directors: string;
+  imdbLink: string;
+  metascore: number;
 }
 
-async function scrapeLetterboxd() {
+/**
+ * Función para obtener el input del usuario.
+ */
+function getUserInput() {
+  const option = readlineSync.question('Selecciona una opción (popular, year, decade): ').toLowerCase();
+
+  let yearOrDecade = '';
+  if (option === 'year') {
+    yearOrDecade = readlineSync.question('Introduce el año (ej. 2023): ');
+  } else if (option === 'decade') {
+    yearOrDecade = readlineSync.question('Introduce la década (ej. 1990): ');
+  }
+
+  const pages = readlineSync.questionInt('Número de páginas a scrapear: ');
+
+  return { option, yearOrDecade, pages };
+}
+
+/**
+ * Construye la URL de Letterboxd según la opción elegida.
+ */
+function buildLetterboxdUrl(option: string, yearOrDecade: string, page: number): string {
+  let url = 'https://letterboxd.com/films/';
+
+  if (option === 'year') {
+    url += `year/${yearOrDecade}/`;
+  } else if (option === 'decade') {
+    url += `popular/decade/${yearOrDecade}s/`;
+  } else {
+    url += 'popular/';
+  }
+
+  if (page > 1) {
+    url += `page/${page}/`;
+  }
+
+  return url;
+}
+
+/**
+ * Scrapea una página de Letterboxd para obtener películas.
+ */
+async function scrapeLetterboxdPage(url: string) {
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
+  await page.goto(url, { waitUntil: 'networkidle2' });
 
-  let baseUrl = 'https://letterboxd.com/films/popular/';
-  if (filterType === 'year' && filterValue) {
-    baseUrl = `https://letterboxd.com/films/year/${filterValue}/`;
-  } else if (filterType === 'decade' && filterValue) {
-    baseUrl = `https://letterboxd.com/films/decade/${filterValue}s/`;
-  }
+  await page.waitForSelector('.poster-container', { timeout: 10000 });
 
-  let films: { title: string; year: string; rating: string }[] = [];
+  const movies = await page.evaluate(() => {
+    const movieElements = document.querySelectorAll('.poster-container');
+    const movieList: { title: string; link: string }[] = [];
 
-  for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-    const url = `${baseUrl}page/${pageNum}/`;
-    console.log(`🔎 Scrapeando: ${url}`);
-    await page.goto(url, { waitUntil: 'networkidle2' });
+    movieElements.forEach((movie) => {
+      const titleElement = movie.querySelector('.frame-title');
+      const linkElement = movie.querySelector('a.frame');
 
-    const newFilms = await page.evaluate(() => {
-      return Array.from(document.querySelectorAll('.poster-container')).map((el) => {
-        const titleElement = el.querySelector('.frame-title') as HTMLElement;
-        let title = titleElement ? titleElement.innerText.trim() : 'Desconocido';
+      const title = titleElement?.textContent?.trim();
+      const link = linkElement?.getAttribute('href');
 
-        const yearMatch = title.match(/\((\d{4})\)$/);
-        const year = yearMatch ? yearMatch[1] : 'Desconocido';
-        title = title.replace(/\(\d{4}\)$/, '').trim();
-
-        const rating = el.getAttribute('data-average-rating') || 'N/A';
-
-        return { title, year, rating };
-      });
+      if (title && link) {
+        movieList.push({
+          title,
+          link: `https://letterboxd.com${link}`,
+        });
+      }
     });
 
-    films = films.concat(newFilms);
-    console.log(`📌 Página ${pageNum} scrapeada: ${newFilms.length} películas.`);
-  }
-
-  console.log(`✅ Total de películas obtenidas: ${films.length}`);
-
-  const csv = Papa.unparse(films);
-  const fileName = `films_${filterType}${filterValue ? '_' + filterValue : ''}_p${maxPages}.csv`;
-  fs.writeFileSync(fileName, csv, 'utf-8');
-  console.log(`📁 Archivo '${fileName}' guardado correctamente.`);
+    return movieList;
+  });
 
   await browser.close();
+  return movies;
 }
 
-scrapeLetterboxd();
+/**
+ * Scrapea los detalles de una película en Letterboxd.
+ */
+async function scrapeMovieDetails(url: string, browser: Browser) {
+  const page = await browser.newPage();
+  const slug = url.split('/film/')[1]?.replace('/', '') || 'desconocido';
+
+  console.log(`\n🎬 Scrapeando: ${slug}`);
+
+  await page.goto(url, { waitUntil: 'networkidle2' });
+
+  const movieDetails: MovieDetails = await page.evaluate(() => {
+    const titleElement = document.querySelector('h1.headline-1 span.name');
+    const yearElement = document.querySelector('div.releaseyear a');
+    const directorsElements = document.querySelectorAll('.directorlist a');
+    const imdbElement = document.querySelector("a[href*='imdb.com/title']");
+
+    const title = titleElement?.textContent?.trim() || 'Desconocido';
+    const year = yearElement?.textContent?.trim() || 'Desconocido';
+
+    const directors = Array.from(directorsElements)
+      .map((dir) => dir.textContent?.trim())
+      .filter(Boolean)
+      .join(', ');
+
+    let imdbLink = imdbElement?.getAttribute('href') || '';
+    if (imdbLink.startsWith('/')) {
+      imdbLink = `https://www.imdb.com${imdbLink}`;
+    }
+    imdbLink = imdbLink.replace('/maindetails', '/');
+
+    return { title, year, directors, imdbLink, metascore: -1 };
+  });
+
+  if (movieDetails.imdbLink) {
+    movieDetails.metascore = await getMetascore(movieDetails.imdbLink, browser);
+  }
+
+  await page.close();
+  return movieDetails;
+}
+
+/**
+ * Obtiene el Metascore de IMDb.
+ */
+async function getMetascore(imdbUrl: string, browser: Browser): Promise<number> {
+  console.log(`🔍 Buscando Metascore en IMDb...`);
+
+  const page = await browser.newPage();
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+  );
+
+  await page.goto(imdbUrl, { waitUntil: 'domcontentloaded' });
+
+  try {
+    const metascoreText = await page.$eval(
+      '.sc-b0901df4-0.bXIOoL.metacritic-score-box',
+      (el) => el.textContent?.trim() || 'N/A'
+    );
+
+    const metascore = parseInt(metascoreText, 10);
+    console.log(`✅ Metascore: ${metascore}`);
+
+    await page.close();
+    return isNaN(metascore) ? -1 : metascore;
+  } catch (error) {
+    console.log('⚠️ No se encontró el Metascore.');
+    await page.close();
+    return -1;
+  }
+}
+
+/**
+ * Guarda los datos en CSV, filtrando solo las películas con Metascore > 80.
+ */
+async function saveToCSV(movies: MovieDetails[], filename: string) {
+  if (!fs.existsSync('output')) {
+    fs.mkdirSync('output');
+  }
+
+  const filteredMovies = movies.filter((movie) => movie.metascore > 80);
+
+  if (filteredMovies.length === 0) {
+    console.log('⚠️ Ninguna película tiene Metascore > 80. No se guardará el CSV.');
+    return;
+  }
+
+  const csvWriter = createObjectCsvWriter({
+    path: path.join('output', filename),
+    header: [
+      { id: 'title', title: 'Título' },
+      { id: 'year', title: 'Año' },
+      { id: 'directors', title: 'Directores' },
+      { id: 'metascore', title: 'Metascore' },
+    ],
+  });
+
+  await csvWriter.writeRecords(filteredMovies);
+  console.log(`\n✅ Datos guardados en output/${filename}`);
+}
+
+/**
+ * Función principal.
+ */
+async function main() {
+  console.log('🎬 Bienvenido al Scraper de Letterboxd');
+
+  const { option, yearOrDecade, pages } = getUserInput();
+  const browser = await puppeteer.launch({ headless: true });
+
+  const movies: MovieDetails[] = [];
+
+  for (let page = 1; page <= pages; page++) {
+    const url = buildLetterboxdUrl(option, yearOrDecade, page);
+    console.log(`\n📄 Explorando página ${page} de ${pages}: ${url}`);
+
+    const movieLinks = await scrapeLetterboxdPage(url);
+    for (let i = 0; i < movieLinks.length; i++) {
+      console.log(`\n📽️ Película ${i + 1} de ${movieLinks.length}`);
+      const details = await scrapeMovieDetails(movieLinks[i].link, browser);
+      movies.push(details);
+    }
+  }
+
+  await browser.close();
+
+  const filename = `letterboxd_${option}${yearOrDecade ? `_${yearOrDecade}` : ''}.csv`;
+  await saveToCSV(movies, filename);
+
+  console.log('✅ Scraping finalizado.');
+}
+
+// Ejecutar
+main();
