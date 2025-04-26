@@ -143,10 +143,7 @@ async function getMetascore(imdbUrl: string, browser: Browser): Promise<number> 
   await page.goto(imdbUrl, { waitUntil: 'domcontentloaded' });
 
   try {
-    const metascoreText = await page.$eval(
-      '.sc-b0901df4-0.bXIOoL.metacritic-score-box',
-      (el) => el.textContent?.trim() || 'N/A'
-    );
+    const metascoreText = await page.$eval('.metacritic-score-box', (el) => el.textContent?.trim() || 'N/A');
 
     const metascore = parseInt(metascoreText, 10);
     console.log(`✅ Metascore: ${metascore}`);
