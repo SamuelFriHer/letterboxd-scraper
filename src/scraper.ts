@@ -91,42 +91,91 @@ async function scrapeLetterboxdPage(url: string) {
  * Scrapea los detalles de una película en Letterboxd.
  */
 async function scrapeMovieDetails(url: string, browser: Browser) {
-  const page = await browser.newPage();
   const slug = url.split('/film/')[1]?.replace('/', '') || 'desconocido';
-
   console.log(`\n🎬 Scrapeando: ${slug}`);
 
-  await page.goto(url, { waitUntil: 'networkidle2' });
+  const MAX_RETRIES = 3;
+  let retries = 0;
 
-  const movieDetails: MovieDetails = await page.evaluate(() => {
-    const titleElement = document.querySelector('h1.headline-1 span.name');
-    const yearElement = document.querySelector('div.releaseyear a');
-    const directorsElements = document.querySelectorAll('.directorlist a');
-    const imdbElement = document.querySelector("a[href*='imdb.com/title']");
+  while (retries <= MAX_RETRIES) {
+    try {
+      const page = await browser.newPage();
 
-    const title = titleElement?.textContent?.trim() || 'Desconocido';
-    const year = yearElement?.textContent?.trim() || 'Desconocido';
+      // Incrementar el timeout para la navegación
+      await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: 60000, // Incrementar a 60 segundos
+      });
 
-    const directors = Array.from(directorsElements)
-      .map((dir) => dir.textContent?.trim())
-      .filter(Boolean)
-      .join(', ');
+      const movieDetails: MovieDetails = await page.evaluate(() => {
+        const titleElement = document.querySelector('h1.headline-1 span.name');
+        const yearElement = document.querySelector('div.releaseyear a');
+        const directorsElements = document.querySelectorAll('.directorlist a');
+        const imdbElement = document.querySelector("a[href*='imdb.com/title']");
 
-    let imdbLink = imdbElement?.getAttribute('href') || '';
-    if (imdbLink.startsWith('/')) {
-      imdbLink = `https://www.imdb.com${imdbLink}`;
+        const title = titleElement?.textContent?.trim() || 'Desconocido';
+        const year = yearElement?.textContent?.trim() || 'Desconocido';
+
+        const directors = Array.from(directorsElements)
+          .map((dir) => dir.textContent?.trim())
+          .filter(Boolean)
+          .join(', ');
+
+        let imdbLink = imdbElement?.getAttribute('href') || '';
+        if (imdbLink.startsWith('/')) {
+          imdbLink = `https://www.imdb.com${imdbLink}`;
+        }
+        imdbLink = imdbLink.replace('/maindetails', '/');
+
+        return { title, year, directors, imdbLink, metascore: -1 };
+      });
+
+      if (movieDetails.imdbLink) {
+        movieDetails.metascore = await getMetascore(movieDetails.imdbLink, browser);
+      }
+
+      await page.close();
+      return movieDetails;
+    } catch (error) {
+      retries++;
+
+      // Cerrar la página si se produjo un error durante la navegación
+      try {
+        const pages = await browser.pages();
+        const lastPage = pages[pages.length - 1];
+        await lastPage.close();
+      } catch (e) {
+        // Ignorar errores al intentar cerrar la página
+      }
+
+      if (retries <= MAX_RETRIES) {
+        const waitTime = retries * 5000; // Espera incremental: 5s, 10s, 15s
+        console.log(
+          `⚠️ Error al cargar ${slug}. Reintento ${retries}/${MAX_RETRIES} en ${waitTime / 1000} segundos...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+      } else {
+        console.log(`❌ No se pudo cargar ${slug} después de ${MAX_RETRIES} intentos.`);
+        // Devolver datos parciales para no perder toda la película
+        return {
+          title: slug.replace(/-/g, ' '),
+          year: 'Desconocido',
+          directors: 'Desconocido',
+          imdbLink: '',
+          metascore: -1,
+        };
+      }
     }
-    imdbLink = imdbLink.replace('/maindetails', '/');
-
-    return { title, year, directors, imdbLink, metascore: -1 };
-  });
-
-  if (movieDetails.imdbLink) {
-    movieDetails.metascore = await getMetascore(movieDetails.imdbLink, browser);
   }
 
-  await page.close();
-  return movieDetails;
+  // Nunca debería llegar aquí, pero TypeScript necesita un retorno
+  return {
+    title: slug.replace(/-/g, ' '),
+    year: 'Desconocido',
+    directors: 'Desconocido',
+    imdbLink: '',
+    metascore: -1,
+  };
 }
 
 /**
@@ -135,26 +184,58 @@ async function scrapeMovieDetails(url: string, browser: Browser) {
 async function getMetascore(imdbUrl: string, browser: Browser): Promise<number> {
   console.log(`🔍 Buscando Metascore en IMDb...`);
 
-  const page = await browser.newPage();
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
-  );
+  const MAX_RETRIES = 2;
+  let retries = 0;
 
-  await page.goto(imdbUrl, { waitUntil: 'domcontentloaded' });
+  while (retries <= MAX_RETRIES) {
+    try {
+      const page = await browser.newPage();
+      await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+      );
 
-  try {
-    const metascoreText = await page.$eval('.metacritic-score-box', (el) => el.textContent?.trim() || 'N/A');
+      await page.goto(imdbUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: 45000, // 45 segundos de timeout
+      });
 
-    const metascore = parseInt(metascoreText, 10);
-    console.log(`✅ Metascore: ${metascore}`);
+      try {
+        const metascoreText = await page.$eval('.metacritic-score-box', (el) => el.textContent?.trim() || 'N/A');
 
-    await page.close();
-    return isNaN(metascore) ? -1 : metascore;
-  } catch (error) {
-    console.log('⚠️ No se encontró el Metascore.');
-    await page.close();
-    return -1;
+        const metascore = parseInt(metascoreText, 10);
+        console.log(`✅ Metascore: ${metascore}`);
+
+        await page.close();
+        return isNaN(metascore) ? -1 : metascore;
+      } catch (error) {
+        console.log('⚠️ No se encontró el Metascore.');
+        await page.close();
+        return -1;
+      }
+    } catch (error) {
+      retries++;
+
+      // Cerrar la página si se produjo un error
+      try {
+        const pages = await browser.pages();
+        const lastPage = pages[pages.length - 1];
+        await lastPage.close();
+      } catch (e) {
+        // Ignorar errores al intentar cerrar la página
+      }
+
+      if (retries <= MAX_RETRIES) {
+        const waitTime = retries * 3000; // 3s, 6s
+        console.log(`⚠️ Error al cargar IMDb. Reintento ${retries}/${MAX_RETRIES} en ${waitTime / 1000} segundos...`);
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
+      } else {
+        console.log(`❌ No se pudo cargar IMDb después de ${MAX_RETRIES} intentos.`);
+        return -1;
+      }
+    }
   }
+
+  return -1;
 }
 
 /**
