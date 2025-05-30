@@ -151,7 +151,7 @@ async function getMetascore(imdbUrl: string, browser: Browser): Promise<number> 
     await page.close();
     return isNaN(metascore) ? -1 : metascore;
   } catch (error) {
-    console.log('⚠️  No se encontró el Metascore.');
+    console.log('⚠️ No se encontró el Metascore.');
     await page.close();
     return -1;
   }
@@ -168,7 +168,7 @@ async function saveToCSV(movies: MovieDetails[], filename: string) {
   const filteredMovies = movies.filter((movie) => movie.metascore > 80);
 
   if (filteredMovies.length === 0) {
-    console.log('⚠️  Ninguna película tiene Metascore > 80. No se guardará el CSV.');
+    console.log('⚠️ Ninguna película tiene Metascore > 80. No se guardará el CSV.');
     return;
   }
 
@@ -203,7 +203,7 @@ async function main() {
 
     const movieLinks = await scrapeLetterboxdPage(url);
     for (let i = 0; i < movieLinks.length; i++) {
-      console.log(`\n📽️  Película ${i + 1} de ${movieLinks.length}`);
+      console.log(`\n📽️ Película ${i + 1} de ${movieLinks.length}`);
       const details = await scrapeMovieDetails(movieLinks[i].link, browser);
       movies.push(details);
     }
