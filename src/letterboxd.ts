@@ -44,9 +44,9 @@ export async function scrapeLetterboxdPage(url: string): Promise<MovieLink[]> {
  */
 export async function extractMovieDetails(page: Page): Promise<MovieDetails> {
   return await page.evaluate(() => {
-    const titleElement = document.querySelector('h1.headline-1 span.name');
-    const yearElement = document.querySelector('div.releaseyear a');
-    const directorsElements = document.querySelectorAll('.directorlist a');
+    const titleElement = document.querySelector('h1.headline-1.primaryname span.name');
+    const yearElement = document.querySelector('span.releasedate a');
+    const directorsElements = document.querySelectorAll('.creatorlist a.contributor');
     const imdbElement = document.querySelector("a[href*='imdb.com/title']");
 
     const title = titleElement?.textContent?.trim() || 'Desconocido';
