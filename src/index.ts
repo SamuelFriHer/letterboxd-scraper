@@ -11,7 +11,10 @@ async function main() {
   console.log('🎬 Bienvenido al Scraper de Letterboxd');
 
   const { option, yearOrDecade, pages } = getUserInput();
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: '/usr/bin/chromium-browser',
+  });
 
   const movies: MovieDetails[] = [];
 

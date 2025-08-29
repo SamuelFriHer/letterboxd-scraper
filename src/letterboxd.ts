@@ -7,7 +7,10 @@ import { getMetascore } from './imdb';
  * Scrapea una página de Letterboxd para obtener películas.
  */
 export async function scrapeLetterboxdPage(url: string): Promise<MovieLink[]> {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    executablePath: '/usr/bin/chromium-browser',
+  });
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: 'networkidle2' });
 
