@@ -14,24 +14,25 @@ export async function scrapeLetterboxdPage(url: string): Promise<MovieLink[]> {
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: 'networkidle2' });
 
-  await page.waitForSelector('.poster-container', { timeout: 10000 });
+  await page.waitForSelector('.posteritem', { timeout: 10000 });
 
   const movies = await page.evaluate(() => {
-    const movieElements = document.querySelectorAll('.poster-container');
+    const movieElements = document.querySelectorAll('.posteritem');
     const movieList: { title: string; link: string }[] = [];
 
     movieElements.forEach((movie) => {
-      const titleElement = movie.querySelector('.frame-title');
-      const linkElement = movie.querySelector('a.frame');
+      const reactComponent = movie.querySelector('.react-component');
 
-      const title = titleElement?.textContent?.trim();
-      const link = linkElement?.getAttribute('href');
+      if (reactComponent) {
+        const title = reactComponent.getAttribute('data-item-name') || '';
+        const link = reactComponent.getAttribute('data-item-link') || '';
 
-      if (title && link) {
-        movieList.push({
-          title,
-          link: `https://letterboxd.com${link}`,
-        });
+        if (title && link) {
+          movieList.push({
+            title,
+            link: `https://letterboxd.com${link}`,
+          });
+        }
       }
     });
 
