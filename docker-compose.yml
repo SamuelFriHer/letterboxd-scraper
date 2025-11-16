@@ -1,0 +1,18 @@
+services:
+  scraper:
+    # Dockerfile está en este directorio
+    build: .
+
+    # El directorio de trabajo DENTRO del contenedor
+    working_dir: /app
+
+    # Soluciona permisos de archivos
+    user: '${UID}:${GID}'
+
+    # Volúmenes:
+    volumes:
+      # Monta el código local en /app
+      - .:/app
+
+    # El comando que se ejecutará
+    command: sh -c "npm install && npm start"
