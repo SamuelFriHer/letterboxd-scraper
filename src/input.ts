@@ -5,7 +5,9 @@ import { UserInput } from './types';
  * Función para obtener el input del usuario.
  */
 export function getUserInput(): UserInput {
-  const option = readlineSync.question('Selecciona una opción (popular, year, decade): ').toLowerCase();
+  const option = readlineSync
+    .question('Selecciona una opción (popular, year, decade): ')
+    .toLowerCase();
 
   let yearOrDecade = '';
   if (option === 'year') {
@@ -22,7 +24,11 @@ export function getUserInput(): UserInput {
 /**
  * Construye la URL de Letterboxd según la opción elegida.
  */
-export function buildLetterboxdUrl(option: string, yearOrDecade: string, page: number): string {
+export function buildLetterboxdUrl(
+  option: string,
+  yearOrDecade: string,
+  page: number
+): string {
   let url = 'https://letterboxd.com/films/';
 
   if (option === 'year') {
