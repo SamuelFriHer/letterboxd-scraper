@@ -17,39 +17,76 @@
 
 ## Requisitos
 
-- Node.js (v16 o superior)
-- npm o yarn
-- [Puppeteer](https://pptr.dev) para la automatización del navegador.
+- [Docker](https://www.docker.com/)
+- [Docker Compose](https://docs.docker.com/compose/)
 
-## Instalación
+No es necesario instalar Node.js ni npm en tu máquina local.
+
+## Instalación y Configuración
 
 1. Clona este repositorio:
 
    ```bash
-   git clone https://github.com/SamuelFriHer/letterboxd-scraper.git
+   git clone git@github.com:SamuelFriHer/letterboxd-scraper.git
    cd letterboxd-scraper
    ```
 
-2. Instala las dependencias:
+2. Crea un archivo `.env` con tu ID de usuario y grupo para evitar problemas de permisos con los archivos generados:
+
    ```bash
-   npm install
+   echo "UID=$(id -u)" > .env
+   echo "GID=$(id -g)" >> .env
    ```
 
 ## Uso
 
-1. Ejecuta el programa:
+Para ejecutar el scraper, utiliza el siguiente comando. Esto instalará las dependencias (si no están) y ejecutará el programa:
 
-   ```bash
-   npm start
-   ```
+```bash
+docker compose run --rm scraper
+```
 
-2. Sigue las instrucciones en la terminal:
-   - Selecciona una opción: `popular`, `year` o `decade`.
-   - Si seleccionas `year`, introduce el año (por ejemplo, `2023`).
-   - Si seleccionas `decade`, introduce la década (por ejemplo, `1990`).
-   - Introduce el número de páginas a scrapear.
+Sigue las instrucciones en la terminal:
+- Selecciona una opción: `popular`, `year` o `decade`.
+- Si seleccionas `year`, introduce el año (por ejemplo, `2023`).
+- Si seleccionas `decade`, introduce la década (por ejemplo, `1990`).
+- Introduce el número de páginas a scrapear.
 
-3. Los datos se guardarán en un archivo CSV dentro de la carpeta `output`.
+Los datos se guardarán en un archivo CSV dentro de la carpeta `output`.
+
+## Mantenimiento y Desarrollo
+
+Puedes ejecutar cualquier comando de npm utilizando `docker compose run`. Aquí tienes algunos ejemplos comunes:
+
+### Instalar nuevas dependencias
+
+```bash
+docker compose run --rm scraper npm install <nombre-paquete>
+```
+
+### Ejecutar Linter
+
+Para verificar el código con ESLint:
+
+```bash
+docker compose run --rm scraper npm run lint
+```
+
+### Formatear código
+
+Para formatear el código con Prettier:
+
+```bash
+docker compose run --rm scraper npm run format
+```
+
+### Reconstruir el proyecto
+
+Si necesitas recompilar el TypeScript manualmente:
+
+```bash
+docker compose run --rm scraper npm run build
+```
 
 ## Ejemplo
 
@@ -57,8 +94,8 @@ Si seleccionas `year` con el año `2023` y 2 páginas, el programa generará un 
 
 ## Notas
 
-- El programa utiliza Puppeteer en modo `headless` para navegar por las páginas de Letterboxd e IMDb.
-- Si no se encuentra un Metascore para una película, se asignará un valor de `-1`.
+- El programa utiliza Puppeteer en modo `headless` dentro del contenedor.
+- Los archivos generados en `output` y los cambios en el código se reflejarán en tu máquina local gracias a los volúmenes de Docker.
 
 ## Contribuciones
 
