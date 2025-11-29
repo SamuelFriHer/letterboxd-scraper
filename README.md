@@ -44,7 +44,6 @@
    ```
 
 2. Sigue las instrucciones en la terminal:
-
    - Selecciona una opción: `popular`, `year` o `decade`.
    - Si seleccionas `year`, introduce el año (por ejemplo, `2023`).
    - Si seleccionas `decade`, introduce la década (por ejemplo, `1990`).
