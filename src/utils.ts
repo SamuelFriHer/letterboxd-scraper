@@ -9,7 +9,7 @@ export async function cleanupPage(browser: Browser): Promise<void> {
     const pages = await browser.pages();
     const lastPage = pages[pages.length - 1];
     await lastPage.close();
-  } catch (e) {
+  } catch (_e) {
     // Ignorar errores al intentar cerrar la página
   }
 }
