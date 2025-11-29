@@ -25,6 +25,6 @@ module.exports = tseslint.config(
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'output/'],
+    ignores: ['dist/', 'node_modules/', 'output/', 'eslint.config.js'],
   }
 );
