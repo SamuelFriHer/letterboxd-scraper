@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsc && node dist/index.js",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts",
+    "lint": "eslint .",
+    "format": "prettier --write .",
     "build": "tsc"
   },
   "repository": {
@@ -32,6 +32,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.7.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.48.0"
   }
 }
