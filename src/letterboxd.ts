@@ -13,7 +13,32 @@ export async function scrapeLetterboxdPage(
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: 'networkidle2' });
 
-  await page.waitForSelector('.posteritem', { timeout: 10000 });
+  // Intentar aceptar cookies si aparece el diálogo
+  try {
+    const consentButtonSelector = '.fc-cta-consent'; // Selector común de Google Funding Choices
+    const consentButton = await page.$(consentButtonSelector);
+    if (consentButton) {
+      console.log('🍪 Diálogo de consentimiento detectado. Aceptando...');
+      await consentButton.click();
+      // Esperar un poco a que el diálogo desaparezca y el contenido cargue
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  } catch (e) {
+    // Ignorar errores al intentar cerrar el diálogo, no es crítico si no existe
+    console.log('ℹ️ No se detectó o no se pudo cerrar el diálogo de cookies.');
+  }
+
+  try {
+    await page.waitForSelector('.posteritem', { timeout: 30000 });
+  } catch (error) {
+    console.error(
+      '❌ Error: Tiempo de espera agotado buscando películas. Puede ser por:'
+    );
+    console.error('   1. Cloudflare bloqueando la conexión.');
+    console.error('   2. Internet lento o página muy pesada.');
+    console.error('   3. Estructura de la página cambiada.');
+    throw error;
+  }
 
   const movies = await page.evaluate(() => {
     const movieElements = document.querySelectorAll('.posteritem');
