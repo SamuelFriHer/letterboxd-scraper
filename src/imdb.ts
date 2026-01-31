@@ -1,5 +1,6 @@
 import { Browser, Page } from 'puppeteer';
 import { cleanupPage } from './utils';
+import { logger } from './logger';
 
 /**
  * Abre una nueva página de IMDb con un user agent personalizado
@@ -32,10 +33,10 @@ export async function extractMetascore(page: Page): Promise<number> {
     );
 
     const metascore = parseInt(metascoreText, 10);
-    console.log(`✅ Metascore: ${metascore}`);
+    logger.log(`✅ Metascore: ${metascore}`);
     return isNaN(metascore) ? -1 : metascore;
   } catch (_error) {
-    console.log('⚠️ No se encontró el Metascore.');
+    logger.warn('⚠️ No se encontró el Metascore.');
     return -1;
   }
 }
@@ -48,7 +49,7 @@ export async function handleRetry(
   maxRetries: number
 ): Promise<void> {
   const waitTime = retries * 3000; // 3s, 6s, etc.
-  console.log(
+  logger.warn(
     `⚠️ Error al cargar IMDb. Reintento ${retries}/${maxRetries} en ${waitTime / 1000} segundos...`
   );
   await new Promise((resolve) => setTimeout(resolve, waitTime));
@@ -61,7 +62,7 @@ export async function getMetascore(
   imdbUrl: string,
   browser: Browser
 ): Promise<number> {
-  console.log(`🔍 Buscando Metascore en IMDb...`);
+  logger.log(`🔍 Buscando Metascore en IMDb...`);
 
   const MAX_RETRIES = 2;
   let retries = 0;
@@ -86,7 +87,7 @@ export async function getMetascore(
       if (retries <= MAX_RETRIES) {
         await handleRetry(retries, MAX_RETRIES);
       } else {
-        console.log(
+        logger.error(
           `❌ No se pudo cargar IMDb después de ${MAX_RETRIES} intentos.`
         );
         return -1;

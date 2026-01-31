@@ -2,6 +2,7 @@ import { Browser, Page } from 'puppeteer';
 import { MovieDetails, MovieLink } from './types';
 import { cleanupPage, createPartialMovieData } from './utils';
 import { getMetascore } from './imdb';
+import { logger } from './logger';
 import {
   handleCookieConsent,
   waitForMovies,
@@ -75,7 +76,7 @@ export async function scrapeMovieDetails(
   browser: Browser
 ): Promise<MovieDetails> {
   const slug = url.split('/film/')[1]?.replace('/', '') || 'desconocido';
-  console.log(`\n🎬 Scrapeando: ${slug}`);
+  logger.log(`\n🎬 Scrapeando: ${slug}`);
 
   const MAX_RETRIES = 3;
   for (let retries = 0; retries <= MAX_RETRIES; retries++) {
@@ -84,11 +85,11 @@ export async function scrapeMovieDetails(
 
     await cleanupPage(browser);
     if (retries < MAX_RETRIES) {
-      console.log(`⚠️ Retry ${retries}/${MAX_RETRIES} for ${slug}...`);
+      logger.warn(`⚠️ Retry ${retries}/${MAX_RETRIES} for ${slug}...`);
       await new Promise((r) => setTimeout(r, retries * 5000));
     }
   }
 
-  console.log(`❌ Failed: ${slug}`);
+  logger.error(`❌ Failed: ${slug}`);
   return createPartialMovieData(slug);
 }
