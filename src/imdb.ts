@@ -23,18 +23,66 @@ export async function createImdbPage(
 }
 
 /**
+ * Función que se ejecuta en el navegador para extraer el texto del Metascore.
+ */
+function evaluateMetascore(): string {
+  // 1. Selector más específico basado en el nuevo HTML
+  const reviewLink = document.querySelector('a[href*="criticreviews"]');
+  if (reviewLink) {
+    const scoreEl = reviewLink.querySelector('.metacritic-score-box, .score');
+    if (scoreEl && scoreEl.textContent) return scoreEl.textContent.trim();
+  }
+
+  // 2. Buscar por label "Metascore"
+  const labels = Array.from(
+    document.querySelectorAll('.metacritic-score-label, .label')
+  );
+  for (const label of labels) {
+    if (label.textContent?.trim().toLowerCase() === 'metascore') {
+      const container = label.closest('a, li, span.three-Elements');
+      const scoreEl = container?.querySelector('.metacritic-score-box, .score');
+      if (scoreEl && scoreEl.textContent) return scoreEl.textContent.trim();
+    }
+  }
+
+  // 3. Fallback al selector de clase original
+  const box = document.querySelector('.metacritic-score-box');
+  if (box && box.textContent) return box.textContent.trim();
+
+  return 'N/A';
+}
+
+/**
+ * Analiza el texto del Metascore y lo convierte a número o devuelve -1.
+ */
+function parseMetascoreText(metascoreText: string): number {
+  if (metascoreText === 'N/A') {
+    logger.warn('⚠️ No se encontró el Metascore.');
+    return -1;
+  }
+
+  const metascore = parseInt(metascoreText, 10);
+  if (isNaN(metascore)) return -1;
+
+  logger.log(`✅ Metascore: ${metascore}`);
+  return metascore;
+}
+
+/**
  * Extrae el Metascore de una página de IMDb
  */
 export async function extractMetascore(page: Page): Promise<number> {
   try {
-    const metascoreText = await page.$eval(
-      '.metacritic-score-box',
-      (el) => el.textContent?.trim() || 'N/A'
-    );
+    // Esperar a que React renderice los elementos (si existen)
+    await page
+      .waitForSelector(
+        'a[href*="criticreviews"], .metacritic-score-box, .score',
+        { timeout: 3000 }
+      )
+      .catch(() => {});
 
-    const metascore = parseInt(metascoreText, 10);
-    logger.log(`✅ Metascore: ${metascore}`);
-    return isNaN(metascore) ? -1 : metascore;
+    const metascoreText = await page.evaluate(evaluateMetascore);
+    return parseMetascoreText(metascoreText);
   } catch (_error) {
     logger.warn('⚠️ No se encontró el Metascore.');
     return -1;
@@ -63,11 +111,9 @@ export async function getMetascore(
   browser: Browser
 ): Promise<number> {
   logger.log(`🔍 Buscando Metascore en IMDb...`);
-
   const MAX_RETRIES = 2;
-  let retries = 0;
 
-  while (retries <= MAX_RETRIES) {
+  for (let retries = 0; retries <= MAX_RETRIES; retries++) {
     let page: Page | null = null;
 
     try {
@@ -76,21 +122,18 @@ export async function getMetascore(
       await page.close();
       return metascore;
     } catch (_error) {
-      retries++;
-
       if (page) {
         await page.close();
       } else {
         await cleanupPage(browser);
       }
 
-      if (retries <= MAX_RETRIES) {
-        await handleRetry(retries, MAX_RETRIES);
+      if (retries < MAX_RETRIES) {
+        await handleRetry(retries + 1, MAX_RETRIES);
       } else {
         logger.error(
           `❌ No se pudo cargar IMDb después de ${MAX_RETRIES} intentos.`
         );
-        return -1;
       }
     }
   }
