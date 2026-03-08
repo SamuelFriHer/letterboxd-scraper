@@ -1,0 +1,5 @@
+## 2024-03-08 - Puppeteer Resource Optimization
+
+**Learning:** Letterboxd and IMDb are extremely heavy on assets (images, fonts, stylesheets, and tracking media) which significantly slow down Puppeteer page loads if `waitUntil: 'networkidle2'` is used. The core HTML data needed for scraping is available much earlier.
+
+**Action:** Implemented request interception in `src/utils.ts` (`optimizePageLoad`) to block non-essential resources (`image`, `media`, `font`, `stylesheet`) and changed `waitUntil` to `domcontentloaded` for `fetchMovieDetailsFromPage`. When optimizing scrapers, always consider blocking visual/media assets if only DOM text is required.
