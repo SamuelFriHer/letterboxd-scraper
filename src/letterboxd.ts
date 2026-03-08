@@ -1,6 +1,6 @@
 import { Browser, Page } from 'puppeteer';
 import { MovieDetails, MovieLink } from './types';
-import { cleanupPage, createPartialMovieData } from './utils';
+import { cleanupPage, createPartialMovieData, optimizePageLoad } from './utils';
 import { getMetascore } from './imdb';
 import { logger } from './logger';
 import {
@@ -18,6 +18,7 @@ export async function scrapeLetterboxdPage(
   browser: Browser
 ): Promise<MovieLink[]> {
   const page = await browser.newPage();
+  await optimizePageLoad(page);
   await page.goto(url, { waitUntil: 'networkidle2' });
 
   await handleCookieConsent(page);
@@ -44,7 +45,8 @@ export async function fetchMovieDetailsFromPage(
   browser: Browser
 ): Promise<{ page: Page; details: MovieDetails }> {
   const page = await browser.newPage();
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+  await optimizePageLoad(page);
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   const details = await extractMovieDetails(page);
   return { page, details };
 }
