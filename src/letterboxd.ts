@@ -2,7 +2,7 @@ import { Browser, Page } from 'puppeteer';
 import { MovieDetails, MovieLink } from './types';
 import { cleanupPage, createPartialMovieData } from './utils';
 import { getMetascore } from './imdb';
-import { logger } from './logger';
+import { logger, TaskLogger } from './logger';
 import {
   handleCookieConsent,
   waitForMovies,
@@ -54,12 +54,17 @@ export async function fetchMovieDetailsFromPage(
  */
 async function tryLoadMovieDetails(
   url: string,
-  browser: Browser
+  browser: Browser,
+  taskLogger: TaskLogger
 ): Promise<MovieDetails | null> {
   try {
     const { page, details } = await fetchMovieDetailsFromPage(url, browser);
     if (details.imdbLink) {
-      details.metascore = await getMetascore(details.imdbLink, browser);
+      details.metascore = await getMetascore(
+        details.imdbLink,
+        browser,
+        taskLogger
+      );
     }
     await page.close();
     return details;
@@ -70,26 +75,27 @@ async function tryLoadMovieDetails(
 
 /**
  * Scrapea los detalles de una película en Letterboxd.
+ * Devuelve los detalles y el logger utilizado para que el llamador decida cómo imprimirlo.
  */
 export async function scrapeMovieDetails(
   url: string,
   browser: Browser
-): Promise<MovieDetails> {
+): Promise<{ details: MovieDetails; taskLogger: TaskLogger }> {
   const slug = url.split('/film/')[1]?.replace('/', '') || 'desconocido';
-  logger.log(`\n🎬 Scrapeando: ${slug}`);
+  const taskLogger = logger.createTaskLogger(slug);
 
   const MAX_RETRIES = 3;
   for (let retries = 0; retries <= MAX_RETRIES; retries++) {
-    const details = await tryLoadMovieDetails(url, browser);
-    if (details) return details;
+    const details = await tryLoadMovieDetails(url, browser, taskLogger);
+    if (details) return { details, taskLogger };
 
     await cleanupPage(browser);
     if (retries < MAX_RETRIES) {
-      logger.warn(`⚠️ Retry ${retries}/${MAX_RETRIES} for ${slug}...`);
+      taskLogger.warn(`⚠️ Retry ${retries}/${MAX_RETRIES} for ${slug}...`);
       await new Promise((r) => setTimeout(r, retries * 5000));
     }
   }
 
-  logger.error(`❌ Failed: ${slug}`);
-  return createPartialMovieData(slug);
+  taskLogger.error(`❌ Failed: ${slug}`);
+  return { details: createPartialMovieData(slug), taskLogger };
 }

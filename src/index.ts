@@ -36,11 +36,14 @@ async function main() {
           `📦 Procesando lote ${i + 1} de ${batches.length} (${batch.length} películas)...`
         );
 
-        const detailsBatch = await Promise.all(
+        const resultsBatch = await Promise.all(
           batch.map((movieLink) => scrapeMovieDetails(movieLink.link, browser))
         );
 
-        movies.push(...detailsBatch);
+        // Imprimir resultados del lote y limpiar no persistentes
+        logger.logBatchResults(resultsBatch.map((r) => r.taskLogger));
+
+        movies.push(...resultsBatch.map((r) => r.details));
       }
     }
   } finally {
