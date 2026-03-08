@@ -9,6 +9,11 @@ services:
     # Soluciona permisos de archivos
     user: '${UID}:${GID}'
 
+    # Necesario para el sandbox de Chromium
+    cap_add:
+      - SYS_ADMIN
+    shm_size: 1gb
+
     # Volúmenes:
     volumes:
       # Monta el código local en /app
