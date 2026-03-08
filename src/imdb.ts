@@ -26,43 +26,40 @@ export async function createImdbPage(
  * Función que se ejecuta en el navegador para extraer el texto del Metascore.
  */
 function evaluateMetascore(): string {
-  // 1. Buscar en el enlace de Metacritic (críticas de críticos)
-  const selectors = [
-    'a[href*="criticreviews"] .metacritic-score-box',
-    'a[href*="criticreviews"] span',
-    '.metacritic-score-box',
-    '[data-testid="score-box-metacritic"]',
-    '.score-box--metacritic',
-    '.metacritic-score-label + .score',
-  ];
+  const findBySelectors = () => {
+    const selectors = [
+      'a[href*="criticreviews"] .metacritic-score-box',
+      'a[href*="criticreviews"] span',
+      '.metacritic-score-box',
+      '[data-testid="score-box-metacritic"]',
+      '.score-box--metacritic',
+      '.metacritic-score-label + .score',
+    ];
 
-  for (const selector of selectors) {
-    const el = document.querySelector(selector);
-    if (el && el.textContent) {
-      const score = el.textContent.trim();
-      if (!isNaN(parseInt(score, 10))) return score;
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      const score = el?.textContent?.trim();
+      if (score && !isNaN(parseInt(score, 10))) return score;
     }
-  }
+    return null;
+  };
 
-  // 2. Buscar por texto de etiqueta "Metascore"
-  const allElements = Array.from(document.querySelectorAll('*'));
-  for (const el of allElements) {
-    if (
-      el.children.length === 0 &&
-      el.textContent?.trim().toLowerCase() === 'metascore'
-    ) {
-      const parent = el.parentElement;
-      if (parent) {
-        const scoreEl = parent.querySelector('span, div');
-        if (scoreEl && scoreEl.textContent) {
-          const score = scoreEl.textContent.trim();
-          if (!isNaN(parseInt(score, 10))) return score;
-        }
+  const findByLabel = () => {
+    const allElements = Array.from(document.querySelectorAll('*'));
+    for (const el of allElements) {
+      if (
+        el.children.length === 0 &&
+        el.textContent?.trim().toLowerCase() === 'metascore'
+      ) {
+        const scoreEl = el.parentElement?.querySelector('span, div');
+        const score = scoreEl?.textContent?.trim();
+        if (score && !isNaN(parseInt(score, 10))) return score;
       }
     }
-  }
+    return null;
+  };
 
-  return 'N/A';
+  return findBySelectors() || findByLabel() || 'N/A';
 }
 
 /**

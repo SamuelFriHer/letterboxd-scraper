@@ -57,16 +57,14 @@ export async function extractMoviesFromPage(page: Page): Promise<MovieLink[]> {
 }
 
 /**
- * Extrae detalles de una película.
+ * Extrae el enlace de IMDb de la página de Letterboxd.
  */
-export async function extractDetailsFromPage(page: Page) {
-  // Intentar encontrar el enlace de IMDb. A veces está en una pestaña "Links" o requiere scroll.
+async function extractImdbLink(page: Page): Promise<string> {
   let imdbLink = await page.evaluate(() => {
     const imdbElement = document.querySelector("a[href*='imdb.com/title']");
     return imdbElement?.getAttribute('href') || '';
   });
 
-  // Si no se encuentra, intentar buscarlo más agresivamente (Letterboxd a veces lo tiene en el sidebar)
   if (!imdbLink) {
     imdbLink = await page.evaluate(() => {
       const allLinks = Array.from(document.querySelectorAll('a'));
@@ -77,7 +75,17 @@ export async function extractDetailsFromPage(page: Page) {
     });
   }
 
-  const details = await page.evaluate(() => {
+  if (imdbLink && imdbLink.startsWith('/')) {
+    imdbLink = `https://www.imdb.com${imdbLink}`;
+  }
+  return imdbLink.replace('/maindetails', '/');
+}
+
+/**
+ * Extrae los datos básicos de la película (título, año, directores).
+ */
+async function extractBasicMovieDetails(page: Page) {
+  return page.evaluate(() => {
     const titleElement = document.querySelector(
       'h1.headline-1.primaryname span.name'
     );
@@ -96,11 +104,14 @@ export async function extractDetailsFromPage(page: Page) {
 
     return { title, year, directors, metascore: -1 };
   });
+}
 
-  if (imdbLink && imdbLink.startsWith('/')) {
-    imdbLink = `https://www.imdb.com${imdbLink}`;
-  }
-  imdbLink = imdbLink.replace('/maindetails', '/');
+/**
+ * Extrae detalles de una película.
+ */
+export async function extractDetailsFromPage(page: Page) {
+  const imdbLink = await extractImdbLink(page);
+  const details = await extractBasicMovieDetails(page);
 
   return { ...details, imdbLink };
 }
