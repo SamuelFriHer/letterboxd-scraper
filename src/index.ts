@@ -8,6 +8,7 @@ import { scrapeLetterboxdPage, scrapeMovieDetails } from './letterboxd';
 import { saveToCSV } from './output';
 import { config } from './config';
 import { logger } from './logger';
+import { chunk } from './utils';
 
 /**
  * Función principal.
@@ -26,11 +27,20 @@ async function main() {
       logger.header(`\n📄 Explorando página ${page} de ${pages}: ${url}`);
 
       const movieLinks = await scrapeLetterboxdPage(url, browser);
-      for (let i = 0; i < movieLinks.length; i++) {
-        logger.startItem(`\n📽️ Película ${i + 1} de ${movieLinks.length}`);
-        const details = await scrapeMovieDetails(movieLinks[i].link, browser);
-        movies.push(details);
-        logger.endItem();
+      const BATCH_SIZE = 5;
+      const batches = chunk(movieLinks, BATCH_SIZE);
+
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        logger.header(
+          `📦 Procesando lote ${i + 1} de ${batches.length} (${batch.length} películas)...`
+        );
+
+        const detailsBatch = await Promise.all(
+          batch.map((movieLink) => scrapeMovieDetails(movieLink.link, browser))
+        );
+
+        movies.push(...detailsBatch);
       }
     }
   } finally {
