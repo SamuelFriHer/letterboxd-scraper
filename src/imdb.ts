@@ -26,28 +26,41 @@ export async function createImdbPage(
  * Función que se ejecuta en el navegador para extraer el texto del Metascore.
  */
 function evaluateMetascore(): string {
-  // 1. Selector más específico basado en el nuevo HTML
-  const reviewLink = document.querySelector('a[href*="criticreviews"]');
-  if (reviewLink) {
-    const scoreEl = reviewLink.querySelector('.metacritic-score-box, .score');
-    if (scoreEl && scoreEl.textContent) return scoreEl.textContent.trim();
-  }
+  // 1. Buscar en el enlace de Metacritic (críticas de críticos)
+  const selectors = [
+    'a[href*="criticreviews"] .metacritic-score-box',
+    'a[href*="criticreviews"] span',
+    '.metacritic-score-box',
+    '[data-testid="score-box-metacritic"]',
+    '.score-box--metacritic',
+    '.metacritic-score-label + .score',
+  ];
 
-  // 2. Buscar por label "Metascore"
-  const labels = Array.from(
-    document.querySelectorAll('.metacritic-score-label, .label')
-  );
-  for (const label of labels) {
-    if (label.textContent?.trim().toLowerCase() === 'metascore') {
-      const container = label.closest('a, li, span.three-Elements');
-      const scoreEl = container?.querySelector('.metacritic-score-box, .score');
-      if (scoreEl && scoreEl.textContent) return scoreEl.textContent.trim();
+  for (const selector of selectors) {
+    const el = document.querySelector(selector);
+    if (el && el.textContent) {
+      const score = el.textContent.trim();
+      if (!isNaN(parseInt(score, 10))) return score;
     }
   }
 
-  // 3. Fallback al selector de clase original
-  const box = document.querySelector('.metacritic-score-box');
-  if (box && box.textContent) return box.textContent.trim();
+  // 2. Buscar por texto de etiqueta "Metascore"
+  const allElements = Array.from(document.querySelectorAll('*'));
+  for (const el of allElements) {
+    if (
+      el.children.length === 0 &&
+      el.textContent?.trim().toLowerCase() === 'metascore'
+    ) {
+      const parent = el.parentElement;
+      if (parent) {
+        const scoreEl = parent.querySelector('span, div');
+        if (scoreEl && scoreEl.textContent) {
+          const score = scoreEl.textContent.trim();
+          if (!isNaN(parseInt(score, 10))) return score;
+        }
+      }
+    }
+  }
 
   return 'N/A';
 }
@@ -79,12 +92,11 @@ export async function extractMetascore(
   taskLogger: TaskLogger
 ): Promise<number> {
   try {
-    // Esperar a que React renderice los elementos (si existen)
+    // Esperar a que algún selector relevante aparezca
     await page
-      .waitForSelector(
-        'a[href*="criticreviews"], .metacritic-score-box, .score',
-        { timeout: 3000 }
-      )
+      .waitForSelector('a[href*="criticreviews"], .metacritic-score-box', {
+        timeout: 5000,
+      })
       .catch(() => {});
 
     const metascoreText = await page.evaluate(evaluateMetascore);
