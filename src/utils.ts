@@ -1,5 +1,22 @@
-import { Browser } from 'puppeteer';
+import { Browser, Page } from 'puppeteer';
 import { MovieDetails } from './types';
+
+/**
+ * Configura la página para bloquear recursos no esenciales (imágenes, media, fuentes, estilos)
+ * y mejorar el rendimiento.
+ */
+export async function optimizePageLoad(page: Page): Promise<void> {
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    if (
+      ['image', 'media', 'font', 'stylesheet'].includes(request.resourceType())
+    ) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+}
 
 /**
  * Cierra una página en caso de error
