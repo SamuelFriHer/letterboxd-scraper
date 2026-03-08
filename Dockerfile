@@ -10,9 +10,10 @@ RUN apt-get update && apt-get install -y \
 && rm -rf /var/lib/apt/lists/*
 
 # Configurar el sandbox de Chromium con SUID
-RUN if [ -f /usr/lib/chromium/chrome-sandbox ]; then \
-        chown root:root /usr/lib/chromium/chrome-sandbox && \
-        chmod 4755 /usr/lib/chromium/chrome-sandbox; \
+ENV CHROME_DEVEL_SANDBOX=/usr/lib/chromium/chrome-sandbox
+RUN if [ -f "$CHROME_DEVEL_SANDBOX" ]; then \
+        chown root:root "$CHROME_DEVEL_SANDBOX" && \
+        chmod 4755 "$CHROME_DEVEL_SANDBOX"; \
     fi
 
 # Establecer el directorio de trabajo y permisos para el usuario node

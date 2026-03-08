@@ -5,7 +5,7 @@ export const config = {
     headless: true,
     executablePath:
       process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-    args: [],
+    args: ['--disable-dev-shm-usage'],
   },
   timeouts: {
     selector: 10000,
