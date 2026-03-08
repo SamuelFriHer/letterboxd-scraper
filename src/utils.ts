@@ -26,3 +26,14 @@ export function createPartialMovieData(slug: string): MovieDetails {
     metascore: -1,
   };
 }
+
+/**
+ * Divide un array en trozos (chunks) de tamaño especificado.
+ */
+export function chunk<T>(array: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
