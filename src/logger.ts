@@ -1,14 +1,49 @@
 import * as readline from 'readline';
 
 /**
+ * Maneja los logs de una tarea individual (película).
+ * Almacena los mensajes para imprimirlos todos juntos al final.
+ */
+export class TaskLogger {
+  private messages: string[] = [];
+  private persistent: boolean = false;
+
+  constructor(private slug: string) {
+    this.messages.push(`🎬 Scrapeando: ${this.slug}`);
+  }
+
+  public log(message: string): void {
+    this.messages.push(message);
+  }
+
+  public warn(message: string): void {
+    this.persistent = true;
+    this.messages.push(message);
+  }
+
+  public error(message: string): void {
+    this.persistent = true;
+    this.messages.push(message);
+  }
+
+  public isPersistent(): boolean {
+    return this.persistent;
+  }
+
+  public getMessages(): string[] {
+    return this.messages;
+  }
+
+  public getSlug(): string {
+    return this.slug;
+  }
+}
+
+/**
  * Singleton Logger para manejar la salida por consola.
- * Permite agrupar logs por "item" (película) y borrarlos si el item se procesa correctamente.
  */
 export class Logger {
   private static instance: Logger;
-  private linesPrinted: number = 0;
-  private isPersistent: boolean = false;
-  private isItemActive: boolean = false;
 
   private constructor() {}
 
@@ -19,83 +54,67 @@ export class Logger {
     return Logger.instance;
   }
 
-  /**
-   * Imprime un encabezado global o un mensaje que siempre debe permanecer.
-   * No cuenta como parte del bloque "transitorio" del item actual.
-   */
   public header(message: string): void {
-    // Si hay un item activo, idealmente deberíamos cerrarlo o manejarlo,
-    // pero asumiremos que header se llama fuera de items o antes de ellos.
     process.stdout.write(message + '\n');
   }
 
   /**
-   * inicia un bloque de logs para un item (película).
+   * Crea un nuevo logger para una tarea específica.
    */
-  public startItem(message: string): void {
-    if (this.isItemActive) {
-      // Por seguridad, si se llama startItem sin cerrar el anterior, forzamos cierre sin borrar
-      this.reset();
+  public createTaskLogger(slug: string): TaskLogger {
+    return new TaskLogger(slug);
+  }
+
+  /**
+   * Imprime los resultados de un lote y limpia los que no sean persistentes.
+   */
+  public logBatchResults(taskLoggers: TaskLogger[]): void {
+    // 1. Imprimir todos los mensajes del lote
+    for (const task of taskLoggers) {
+      const output = task.getMessages().join(' | ');
+      process.stdout.write(output + '\n');
     }
-    this.isItemActive = true;
-    this.printLine(message);
-  }
 
-  /**
-   * Log normal. Se borrará si el item termina con éxito.
-   */
-  public log(message: string): void {
-    this.printLine(message);
-  }
+    // 2. Esperar un poco para que el usuario vea el progreso (opcional, pero útil)
+    // 3. Borrar los mensajes no persistentes (hacia atrás)
+    let linesToClear = 0;
+    const persistentMessages: string[] = [];
 
-  /**
-   * Log de advertencia/error. Hace que todo el bloque del item sea persistente.
-   */
-  public warn(message: string): void {
-    this.isPersistent = true;
-    this.printLine(message);
-  }
-
-  /**
-   * Log de error. Hace que todo el bloque del item sea persistente.
-   */
-  public error(message: string): void {
-    this.isPersistent = true;
-    this.printLine(message);
-  }
-
-  /**
-   * Finaliza el bloque del item actual.
-   * Si no hubo errores/warnings, borra las líneas impresas.
-   * Si hubo errores/warnings, las deja.
-   */
-  public endItem(): void {
-    if (!this.isItemActive) return;
-
-    if (!this.isPersistent) {
-      // Borrar las líneas
-      if (this.linesPrinted > 0) {
-        readline.moveCursor(process.stdout, 0, -this.linesPrinted);
-        readline.clearScreenDown(process.stdout);
+    // Recorremos al revés para saber cuántas líneas borrar desde el final
+    for (let i = taskLoggers.length - 1; i >= 0; i--) {
+      const task = taskLoggers[i];
+      if (!task.isPersistent()) {
+        linesToClear++;
+      } else {
+        // Si encontramos uno persistente, lo guardamos para re-imprimirlo después de borrar
+        persistentMessages.unshift(task.getMessages().join(' | '));
+        // Pero primero borramos todo lo que haya hasta aquí para "reorganizar"
+        linesToClear++;
       }
     }
 
-    this.reset();
-  }
+    if (linesToClear > 0) {
+      readline.moveCursor(process.stdout, 0, -linesToClear);
+      readline.clearScreenDown(process.stdout);
+    }
 
-  private printLine(message: string): void {
-    process.stdout.write(message + '\n');
-    if (this.isItemActive) {
-      // Contar saltos de línea explícitos en el mensaje más el salto final añadido
-      const explicitNewLines = (message.match(/\n/g) || []).length;
-      this.linesPrinted += 1 + explicitNewLines;
+    // Re-imprimir solo los persistentes
+    for (const msg of persistentMessages) {
+      process.stdout.write(msg + '\n');
     }
   }
 
-  private reset(): void {
-    this.linesPrinted = 0;
-    this.isPersistent = false;
-    this.isItemActive = false;
+  // Métodos legacy para compatibilidad si fuera necesario
+  public log(message: string): void {
+    process.stdout.write(message + '\n');
+  }
+
+  public warn(message: string): void {
+    process.stdout.write(message + '\n');
+  }
+
+  public error(message: string): void {
+    process.stdout.write(message + '\n');
   }
 }
 
