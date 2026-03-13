@@ -24,8 +24,12 @@ export async function saveToCSV(
     return;
   }
 
+  // Sanitizar el nombre del archivo para prevenir Path Traversal
+  const safeFilename = path.basename(filename);
+  const safePath = path.join(config.paths.output, safeFilename);
+
   const csvWriter = createObjectCsvWriter({
-    path: path.join(config.paths.output, filename),
+    path: safePath,
     header: [
       { id: 'title', title: 'Título' },
       { id: 'year', title: 'Año' },
@@ -35,7 +39,5 @@ export async function saveToCSV(
   });
 
   await csvWriter.writeRecords(filteredMovies);
-  console.log(
-    `\n✅ Datos guardados en ${path.join(config.paths.output, filename)}`
-  );
+  console.log(`\n✅ Datos guardados en ${safePath}`);
 }
