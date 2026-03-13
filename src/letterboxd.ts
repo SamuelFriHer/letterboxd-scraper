@@ -1,6 +1,11 @@
 import { Browser, Page } from 'puppeteer';
 import { MovieDetails, MovieLink } from './types';
-import { cleanupPage, createPartialMovieData, optimizePageLoad } from './utils';
+import {
+  cleanupPage,
+  createPartialMovieData,
+  optimizePageLoad,
+  optimizePageLoadDetails,
+} from './utils';
 import { getMetascore } from './imdb';
 import { logger, TaskLogger } from './logger';
 import {
@@ -45,7 +50,7 @@ export async function fetchMovieDetailsFromPage(
   browser: Browser
 ): Promise<{ page: Page; details: MovieDetails }> {
   const page = await browser.newPage();
-  await optimizePageLoad(page);
+  await optimizePageLoadDetails(page);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
   const details = await extractMovieDetails(page);
   return { page, details };
