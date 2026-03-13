@@ -1,0 +1,5 @@
+## 2024-05-14 - Fix Path Traversal in File Saving and CLI Inputs
+
+**Vulnerability:** Unsanitized CLI inputs (`option`, `yearOrDecade`) were used to construct the output filename in `src/index.ts`, and this string was directly appended to the output directory path in `src/output.ts` without sanitization. An attacker could provide a payload like `../../../etc/passwd` to traverse outside the intended output directory.
+**Learning:** Using untrusted/unsanitized input directly into file paths always poses a risk, even if the application is intended to be run locally via CLI by a human. The CLI parameters themselves can be dangerous.
+**Prevention:** Two layers of defense were added. First, user inputs in `src/input.ts` are strongly typed and validated (e.g., restricted to specific values like `popular`, `year`, `decade`, and constrained to 4-digit numeric formats). Second, the file path constructed in `src/output.ts` explicitly uses `path.basename()` as defense-in-depth to guarantee path segments cannot traverse directories.
