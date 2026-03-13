@@ -65,5 +65,5 @@ The project is designed to be run within a Docker container to ensure environmen
 - **Output:** All scraped data must be stored in the `output/` directory, which is mapped as a volume in Docker.
 - **Code Style:** Strictly follow the ESLint and Prettier configurations defined in the root.
 - **Refactoring Constraints:**
-    - No function or method should exceed 40 lines.
-    - No file should exceed 200 lines (including whitespace).
+  - No function or method should exceed 40 lines.
+  - No file should exceed 200 lines (including whitespace).

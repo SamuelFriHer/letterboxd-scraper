@@ -1,5 +1,5 @@
 import { Browser, Page } from 'puppeteer';
-import { cleanupPage, optimizePageLoad } from './utils';
+import { cleanupPage, optimizePageLoadDetails } from './utils';
 import { TaskLogger } from './logger';
 
 /**
@@ -10,7 +10,7 @@ export async function createImdbPage(
   imdbUrl: string
 ): Promise<Page> {
   const page = await browser.newPage();
-  await optimizePageLoad(page);
+  await optimizePageLoadDetails(page);
   await page.setUserAgent(
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
   );
