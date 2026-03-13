@@ -19,6 +19,31 @@ export async function optimizePageLoad(page: Page): Promise<void> {
 }
 
 /**
+ * Configura la página para bloquear más recursos (incluyendo scripts y XHR)
+ * en páginas de detalles donde el contenido ya está en el HTML inicial.
+ */
+export async function optimizePageLoadDetails(page: Page): Promise<void> {
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    if (
+      [
+        'image',
+        'media',
+        'font',
+        'stylesheet',
+        'script',
+        'xhr',
+        'fetch',
+      ].includes(request.resourceType())
+    ) {
+      request.abort();
+    } else {
+      request.continue();
+    }
+  });
+}
+
+/**
  * Cierra una página en caso de error
  */
 export async function cleanupPage(browser: Browser): Promise<void> {
