@@ -91,7 +91,7 @@ async function extractBasicMovieDetails(page: Page) {
     );
     const yearElement = document.querySelector('span.releasedate a');
     const directorsElements = document.querySelectorAll(
-      '.creatorlist a.contributor'
+      '.credits a.contributor[href^="/director/"]'
     );
 
     const title = titleElement?.textContent?.trim() || 'Desconocido';
