@@ -25,9 +25,6 @@ export async function scrapeLetterboxdPage(
   const page = await browser.newPage();
   await optimizePageLoad(page);
 
-  // ⚡ Bolt: Usando 'domcontentloaded' reduce el tiempo de carga de ~25s a <1s.
-  // Evitamos esperar por scripts de rastreo lentos ya que waitForMovies
-  // se encargará explícitamente de esperar a que carguen las películas.
   await page.goto(url, { waitUntil: 'domcontentloaded' });
 
   await handleCookieConsent(page);
