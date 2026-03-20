@@ -69,36 +69,11 @@ export class Logger {
    * Imprime los resultados de un lote y limpia los que no sean persistentes.
    */
   public logBatchResults(taskLoggers: TaskLogger[]): void {
-    // 1. Imprimir todos los mensajes del lote
-    for (const task of taskLoggers) {
-      const output = task.getMessages().join(' | ');
-      process.stdout.write(output + '\n');
-    }
+    // Imprimir solo los mensajes persistentes (errores, advertencias)
+    const persistentMessages = taskLoggers
+      .filter((task) => task.isPersistent())
+      .map((task) => task.getMessages().join(' | '));
 
-    // 2. Esperar un poco para que el usuario vea el progreso (opcional, pero útil)
-    // 3. Borrar los mensajes no persistentes (hacia atrás)
-    let linesToClear = 0;
-    const persistentMessages: string[] = [];
-
-    // Recorremos al revés para saber cuántas líneas borrar desde el final
-    for (let i = taskLoggers.length - 1; i >= 0; i--) {
-      const task = taskLoggers[i];
-      if (!task.isPersistent()) {
-        linesToClear++;
-      } else {
-        // Si encontramos uno persistente, lo guardamos para re-imprimirlo después de borrar
-        persistentMessages.unshift(task.getMessages().join(' | '));
-        // Pero primero borramos todo lo que haya hasta aquí para "reorganizar"
-        linesToClear++;
-      }
-    }
-
-    if (linesToClear > 0) {
-      readline.moveCursor(process.stdout, 0, -linesToClear);
-      readline.clearScreenDown(process.stdout);
-    }
-
-    // Re-imprimir solo los persistentes
     for (const msg of persistentMessages) {
       process.stdout.write(msg + '\n');
     }

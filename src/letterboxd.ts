@@ -24,7 +24,8 @@ export async function scrapeLetterboxdPage(
 ): Promise<MovieLink[]> {
   const page = await browser.newPage();
   await optimizePageLoad(page);
-  await page.goto(url, { waitUntil: 'networkidle2' });
+
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
 
   await handleCookieConsent(page);
   await waitForMovies(page);
