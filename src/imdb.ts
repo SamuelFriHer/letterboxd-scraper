@@ -187,10 +187,8 @@ export async function extractMetascore(
         },
         { timeout: 20000 }
       )
-      .catch((err) => {
-        taskLogger.warn(
-          '⚠️ Se agotó el tiempo de espera para el Metascore: ' + err.message
-        );
+      .catch(() => {
+        // Ignorar el timeout; evaluateMetascore se encargará de devolver 'N/A' y generar el warning adecuado.
       });
 
     const metascoreText = await page.evaluate(evaluateMetascore);
