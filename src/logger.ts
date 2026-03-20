@@ -1,5 +1,3 @@
-import * as readline from 'readline';
-
 /**
  * Maneja los logs de una tarea individual (película).
  * Almacena los mensajes para imprimirlos todos juntos al final.
