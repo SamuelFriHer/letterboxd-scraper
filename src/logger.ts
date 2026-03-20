@@ -1,5 +1,3 @@
-import * as readline from 'readline';
-
 /**
  * Maneja los logs de una tarea individual (película).
  * Almacena los mensajes para imprimirlos todos juntos al final.
@@ -12,28 +10,55 @@ export class TaskLogger {
     this.messages.push(`🎬 Scrapeando: ${this.slug}`);
   }
 
+  /**
+   * Guarda un mensaje informativo de forma no persistente.
+   * Sólo se mostrará si no hay un error persistente previo.
+   * @param message El mensaje a registrar.
+   */
   public log(message: string): void {
     this.messages.push(message);
   }
 
+  /**
+   * Guarda un mensaje de advertencia y marca la tarea como persistente
+   * para asegurar que el mensaje se imprima en los resultados finales.
+   * @param message El mensaje de advertencia.
+   */
   public warn(message: string): void {
     this.persistent = true;
     this.messages.push(message);
   }
 
+  /**
+   * Guarda un mensaje de error y marca la tarea como persistente
+   * para asegurar que se reporte el error en la salida.
+   * @param message El mensaje de error.
+   */
   public error(message: string): void {
     this.persistent = true;
     this.messages.push(message);
   }
 
+  /**
+   * Indica si la tarea actual contiene mensajes persistentes (advertencias o errores).
+   * @returns Verdadero si existen advertencias o errores, de lo contrario falso.
+   */
   public isPersistent(): boolean {
     return this.persistent;
   }
 
+  /**
+   * Devuelve la lista completa de mensajes guardados por el logger de la tarea.
+   * @returns Un array de string con los mensajes.
+   */
   public getMessages(): string[] {
     return this.messages;
   }
 
+  /**
+   * Devuelve el identificador único (slug) de la película correspondiente a la tarea.
+   * @returns El slug de la tarea en curso.
+   */
   public getSlug(): string {
     return this.slug;
   }
@@ -54,12 +79,18 @@ export class Logger {
     return Logger.instance;
   }
 
+  /**
+   * Imprime un mensaje destacado (cabecera) por consola.
+   * @param message El texto de la cabecera.
+   */
   public header(message: string): void {
     process.stdout.write(message + '\n');
   }
 
   /**
-   * Crea un nuevo logger para una tarea específica.
+   * Crea un nuevo logger dedicado para una tarea específica basada en su slug.
+   * @param slug El identificador de la película (slug).
+   * @returns Una instancia de TaskLogger configurada para la tarea.
    */
   public createTaskLogger(slug: string): TaskLogger {
     return new TaskLogger(slug);

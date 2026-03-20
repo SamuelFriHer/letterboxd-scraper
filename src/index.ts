@@ -12,7 +12,11 @@ import { logger } from './logger';
 import { chunk } from './utils';
 
 /**
- * Procesa una lista de enlaces de películas en lotes y devuelve sus detalles.
+ * Procesa una lista de enlaces de películas agrupándolas en lotes (batches) para extraer
+ * sus detalles sin desbordar los recursos ni sobrecargar al navegador concurrentemente.
+ * @param movieLinks Arreglo con los enlaces básicos de cada película.
+ * @param browser Instancia activa del navegador Puppeteer.
+ * @param movies Arreglo acumulador donde se añaden los detalles obtenidos.
  */
 async function processMovieBatches(
   movieLinks: { link: string }[],
@@ -40,7 +44,9 @@ async function processMovieBatches(
 }
 
 /**
- * Función principal.
+ * Función principal que orquesta todo el flujo de ejecución:
+ * obtiene el input, configura el navegador, raspa listados de Letterboxd,
+ * coordina la obtención de detalles con IMDb y guarda los resultados expurgados en CSV.
  */
 async function main() {
   logger.header('🎬 Bienvenido al Scraper de Letterboxd');

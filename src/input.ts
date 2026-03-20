@@ -2,7 +2,10 @@ import readlineSync from 'readline-sync';
 import { UserInput } from './types';
 
 /**
- * Función para obtener el input del usuario.
+ * Función que solicita por consola la configuración del scraping.
+ * Interactivamente pide opción, año o década y el número de páginas, realizando su validación.
+ * @returns Un objeto UserInput con las preferencias ingresadas.
+ * @throws Lanzará error si el usuario introduce valores no válidos.
  */
 export function getUserInput(): UserInput {
   const option = readlineSync
@@ -39,7 +42,12 @@ export function getUserInput(): UserInput {
 }
 
 /**
- * Construye la URL de Letterboxd según la opción elegida.
+ * Construye la URL base de búsqueda de Letterboxd de acuerdo
+ * a los parámetros ingresados por el usuario.
+ * @param option El tipo de filtro seleccionado ('popular', 'year', 'decade').
+ * @param yearOrDecade El año (ej. 2023) o década (ej. 1990) si corresponde.
+ * @param page El número de página actual que se va a scrapear.
+ * @returns La URL en formato string lista para ser navegada.
  */
 export function buildLetterboxdUrl(
   option: string,
