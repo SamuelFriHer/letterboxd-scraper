@@ -3,7 +3,8 @@ import { MovieDetails } from './types';
 
 /**
  * Configura la página para bloquear recursos no esenciales (imágenes, media, fuentes, estilos)
- * y mejorar el rendimiento.
+ * y mejorar el rendimiento temporal al cargar páginas generales.
+ * @param page La página de Puppeteer a configurar.
  */
 export async function optimizePageLoad(page: Page): Promise<void> {
   await page.setRequestInterception(true);
@@ -21,6 +22,8 @@ export async function optimizePageLoad(page: Page): Promise<void> {
 /**
  * Configura la página para bloquear más recursos (incluyendo scripts y XHR)
  * en páginas de detalles donde el contenido ya está en el HTML inicial.
+ * Esto agiliza considerablemente la extracción final de datos.
+ * @param page La página de Puppeteer a optimizar.
  */
 export async function optimizePageLoadDetails(page: Page): Promise<void> {
   await page.setRequestInterception(true);
@@ -44,7 +47,9 @@ export async function optimizePageLoadDetails(page: Page): Promise<void> {
 }
 
 /**
- * Cierra una página en caso de error
+ * Cierra la última pestaña o página activa en caso de error
+ * para liberar recursos en el navegador.
+ * @param browser Instancia actual del navegador web.
  */
 export async function cleanupPage(browser: Browser): Promise<void> {
   try {
@@ -57,7 +62,10 @@ export async function cleanupPage(browser: Browser): Promise<void> {
 }
 
 /**
- * Crea datos parciales de película basados en el slug
+ * Crea datos parciales de película basados en el slug en caso de fallos,
+ * evitando que la ejecución falle por completo.
+ * @param slug El identificador de la URL de la película (slug).
+ * @returns Un objeto MovieDetails parcial con valores por defecto.
  */
 export function createPartialMovieData(slug: string): MovieDetails {
   return {
@@ -70,7 +78,11 @@ export function createPartialMovieData(slug: string): MovieDetails {
 }
 
 /**
- * Divide un array en trozos (chunks) de tamaño especificado.
+ * Divide un array en trozos (chunks) de tamaño especificado
+ * para procesarlos por lotes.
+ * @param array El array original a dividir.
+ * @param size El tamaño máximo de cada sub-array.
+ * @returns Un array de arrays (lotes) de elementos.
  */
 export function chunk<T>(array: T[], size: number): T[][] {
   const result: T[][] = [];

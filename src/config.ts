@@ -1,5 +1,10 @@
 import path from 'path';
 
+/**
+ * Objeto de configuración global de la aplicación.
+ * Define parámetros de Puppeteer, límites de reintentos, 
+ * rutas de salida y tiempos de espera para las operaciones de scraping.
+ */
 export const config = {
   puppeteer: {
     headless: true,

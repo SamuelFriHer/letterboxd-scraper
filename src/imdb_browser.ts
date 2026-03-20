@@ -6,7 +6,8 @@ let imdbCookiesHandled = false;
 
 /**
  * Abre una pestaña temporal de IMDb para aceptar las cookies una sola vez
- * de forma sincronizada, antes de abrir las pestañas de las películas.
+ * de forma sincronizada, antes de abrir múltiples pestañas para las películas.
+ * @param browser La instancia del navegador Puppeteer.
  */
 async function ensureImdbCookies(browser: Browser): Promise<void> {
   if (imdbCookiesHandled) return;
@@ -47,6 +48,11 @@ const imdbConcurrencyLimit = 2;
 let activeImdbRequests = 0;
 const imdbQueue: (() => void)[] = [];
 
+/**
+ * Adquiere un permiso para realizar peticiones concurrentes a IMDb,
+ * bloqueando la ejecución si se alcanzó el límite preestablecido hasta que se libere un hueco.
+ * @returns Una Promesa que se resuelve cuando el permiso es concedido.
+ */
 async function acquireImdbPermit(): Promise<void> {
   if (activeImdbRequests < imdbConcurrencyLimit) {
     activeImdbRequests++;
@@ -57,6 +63,10 @@ async function acquireImdbPermit(): Promise<void> {
   });
 }
 
+/**
+ * Libera un permiso concurrente utilizado por una petición a IMDb
+ * y otorga paso al siguiente en la cola de espera de existir alguno.
+ */
 function releaseImdbPermit(): void {
   activeImdbRequests--;
   if (imdbQueue.length > 0) {
@@ -67,8 +77,11 @@ function releaseImdbPermit(): void {
 }
 
 /**
- * Abre una nueva página de IMDb con un user agent personalizado
- * Protegido por una cola de concurrencia.
+ * Abre una nueva página de IMDb con un user agent personalizado,
+ * asegurando la aceptación de cookies y protegiéndolo por una cola de concurrencia.
+ * @param browser La instancia del navegador de Puppeteer.
+ * @param imdbUrl La URL de IMDb a la que navegar a continuación.
+ * @returns Un objeto con la nueva página creada y una función para liberar su cupo de concurrencia.
  */
 export async function createImdbPage(
   browser: Browser,

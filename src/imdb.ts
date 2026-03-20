@@ -4,7 +4,9 @@ import { TaskLogger } from './logger';
 import { createImdbPage } from './imdb_browser';
 
 /**
- * Función que se ejecuta en el navegador para extraer el texto del Metascore.
+ * Función que se ejecuta en el contexto del navegador para extraer el texto del Metascore.
+ * Busca iterativamente a través de los selectores posibles en la página.
+ * @returns El texto del Metascore encontrado o 'N/A' si no existe.
  */
 function evaluateMetascore(): string {
   const selectors = [
@@ -42,7 +44,10 @@ function evaluateMetascore(): string {
 }
 
 /**
- * Analiza el texto del Metascore y lo convierte a número o devuelve -1.
+ * Analiza el texto bruto del Metascore y lo convierte a un valor numérico.
+ * @param metascoreText Texto obtenido tras el scraping (ej. "85" o "N/A").
+ * @param taskLogger Instancia de TaskLogger para registrar las advertencias.
+ * @returns El valor numérico del Metascore o -1 si es inválido/inexistente.
  */
 function parseMetascoreText(
   metascoreText: string,
@@ -61,7 +66,11 @@ function parseMetascoreText(
 }
 
 /**
- * Extrae el Metascore de una página de IMDb
+ * Extrae el Metascore de una página activa de IMDb.
+ * Espera a que el elemento se cargue en el DOM y luego extrae su valor.
+ * @param page La página de Puppeteer actual en la que se buscará.
+ * @param taskLogger Instancia de TaskLogger para loggear la información.
+ * @returns El valor numérico del Metascore, o -1 en caso de error.
  */
 export async function extractMetascore(
   page: Page,
@@ -89,7 +98,11 @@ export async function extractMetascore(
 }
 
 /**
- * Maneja la espera entre reintentos con backoff exponencial
+ * Maneja la pausa y mensajes de advertencia entre reintentos fallidos,
+ * utilizando un sistema simple de backoff lineal.
+ * @param retries El número de reintento actual.
+ * @param maxRetries El número máximo de reintentos permitidos.
+ * @param taskLogger Instancia de TaskLogger para registrar el intento.
  */
 export async function handleRetry(
   retries: number,
@@ -104,7 +117,12 @@ export async function handleRetry(
 }
 
 /**
- * Helper para obtener metadata de la página con manejo de errores simple
+ * Helper interno para obtener el Metascore y gestionar su página asociada.
+ * Se encarga de la creación, limpieza y liberación de recursos de la página de IMDb.
+ * @param imdbUrl La URL a la que navegar en busca del Metascore.
+ * @param browser La instancia del navegador.
+ * @param taskLogger El logger para la tarea actual.
+ * @returns El número del Metascore, o lanzará un error si falla la recuperación de la página.
  */
 async function tryFetchMetascore(
   imdbUrl: string,
@@ -128,7 +146,12 @@ async function tryFetchMetascore(
 }
 
 /**
- * Obtiene el Metascore de IMDb.
+ * Función principal para obtener el Metascore gestionando los reintentos
+ * en caso de caídas de conexión o rechazos de la página.
+ * @param imdbUrl La URL de IMDb de la película.
+ * @param browser La instancia de Puppeteer.
+ * @param taskLogger Logger dedicado a la tarea en curso.
+ * @returns El Metascore numérico (-1 si fracasaron todos los intentos).
  */
 export async function getMetascore(
   imdbUrl: string,

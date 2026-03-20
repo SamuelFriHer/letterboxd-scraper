@@ -16,7 +16,11 @@ import {
 } from './scraping_utils';
 
 /**
- * Scrapea una página de Letterboxd para obtener películas.
+ * Navega y extrae la lista de películas básica de una página del listado de Letterboxd.
+ * Se encarga de gestionar el consentimiento de cookies y esperar a que renderice la lista.
+ * @param url La URL de la página de resultados a scrapear.
+ * @param browser La instancia activa de Puppeteer.
+ * @returns Un arreglo de enlaces e información básica de las películas en esta página.
  */
 export async function scrapeLetterboxdPage(
   url: string,
@@ -37,14 +41,20 @@ export async function scrapeLetterboxdPage(
 }
 
 /**
- * Extrae los detalles de la película de una página de Letterboxd.
+ * Extrae los detalles específicos de la película actualizando la navegación.
+ * Coordina la extracción combinada de Letterboxd y ocasionalmente de IMDb.
+ * @param page La página de la que se extraerán los detalles.
+ * @returns Los datos de película compilados.
  */
 export async function extractMovieDetails(page: Page): Promise<MovieDetails> {
   return await extractDetailsFromPage(page);
 }
 
 /**
- * Navega a la URL de la película y extrae sus detalles.
+ * Crea una página optimizada para detalles, navega a la URL y extrae su información.
+ * @param url La URL de la película en Letterboxd.
+ * @param browser La instancia del navegador.
+ * @returns Un objeto envolviendo la página y sus detalles devueltos.
  */
 export async function fetchMovieDetailsFromPage(
   url: string,
@@ -58,7 +68,12 @@ export async function fetchMovieDetailsFromPage(
 }
 
 /**
- * Intenta cargar los detalles de una película.
+ * Intenta cargar los detalles de la película y complementa el Metascore de IMDb
+ * de existir un enlace preexistente extraído desde Letterboxd.
+ * @param url URL de la película de origen (Letterboxd).
+ * @param browser Navegador Puppeteer a utilizar.
+ * @param taskLogger Logger para los registros de esta operación concreta.
+ * @returns Detalles combinados de la película o nulo si no se puede resolver.
  */
 async function tryLoadMovieDetails(
   url: string,
@@ -82,8 +97,11 @@ async function tryLoadMovieDetails(
 }
 
 /**
- * Scrapea los detalles de una película en Letterboxd.
- * Devuelve los detalles y el logger utilizado para que el llamador decida cómo imprimirlo.
+ * Controla el ciclo completo de scraping para los detalles de una película,
+ * gestionando reintentos ante caídas y reportando su estado al sistema de logs.
+ * @param url Enlace directo de Letterboxd de la película en concreto.
+ * @param browser Instancia principal de Puppeteer.
+ * @returns Un paquete con los detalles recuperados junto al logger usado.
  */
 export async function scrapeMovieDetails(
   url: string,

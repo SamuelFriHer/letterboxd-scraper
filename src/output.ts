@@ -5,7 +5,11 @@ import { MovieDetails } from './types';
 import { config } from './config';
 
 /**
- * Guarda los datos en CSV, filtrando solo las películas con Metascore > 80.
+ * Guarda los datos de las películas proporcionadas en formato CSV.
+ * Omitirá el almacenamiento si ninguna película cumple los requisitos de puntuación preestablecidos.
+ * Solo guarda películas con Metascore superior a 80.
+ * @param movies La lista de detalles de las películas extraídas.
+ * @param filename El nombre del archivo CSV a la salida.
  */
 export async function saveToCSV(
   movies: MovieDetails[],
