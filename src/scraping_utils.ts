@@ -78,6 +78,27 @@ async function extractImdbLink(page: Page): Promise<string> {
   if (imdbLink && imdbLink.startsWith('/')) {
     imdbLink = `https://www.imdb.com${imdbLink}`;
   }
+
+  if (imdbLink) {
+    try {
+      const parsedUrl = new URL(imdbLink);
+      // Validar protocolo y dominio para prevenir SSRF y LFI
+      if (
+        !['http:', 'https:'].includes(parsedUrl.protocol) ||
+        !(
+          parsedUrl.hostname === 'imdb.com' ||
+          parsedUrl.hostname.endsWith('.imdb.com')
+        )
+      ) {
+        logger.warn(`⚠️ Enlace de IMDb no seguro ignorado: ${imdbLink}`);
+        return '';
+      }
+    } catch (_e) {
+      // URL inválida
+      return '';
+    }
+  }
+
   return imdbLink.replace('/maindetails', '/');
 }
 
