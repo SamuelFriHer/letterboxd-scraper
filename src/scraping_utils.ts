@@ -56,10 +56,7 @@ export async function extractMoviesFromPage(page: Page): Promise<MovieLink[]> {
   });
 }
 
-/**
- * Extrae el enlace de IMDb de la página de Letterboxd.
- */
-async function extractImdbLink(page: Page): Promise<string> {
+async function findImdbUrlOnPage(page: Page): Promise<string> {
   let imdbLink = await page.evaluate(() => {
     const imdbElement = document.querySelector("a[href*='imdb.com/title']");
     return imdbElement?.getAttribute('href') || '';
@@ -78,28 +75,36 @@ async function extractImdbLink(page: Page): Promise<string> {
   if (imdbLink && imdbLink.startsWith('/')) {
     imdbLink = `https://www.imdb.com${imdbLink}`;
   }
+  return imdbLink;
+}
 
-  if (imdbLink) {
-    try {
-      const parsedUrl = new URL(imdbLink);
-      // Validar protocolo y dominio para prevenir SSRF y LFI
-      if (
-        !['http:', 'https:'].includes(parsedUrl.protocol) ||
-        !(
-          parsedUrl.hostname === 'imdb.com' ||
-          parsedUrl.hostname.endsWith('.imdb.com')
-        )
-      ) {
-        logger.warn(`⚠️ Enlace de IMDb no seguro ignorado: ${imdbLink}`);
-        return '';
-      }
-    } catch (_e) {
-      // URL inválida
+function validateImdbUrl(imdbLink: string): string {
+  if (!imdbLink) return '';
+  try {
+    const parsedUrl = new URL(imdbLink);
+    // Validar protocolo y dominio para prevenir SSRF y LFI
+    if (
+      !['http:', 'https:'].includes(parsedUrl.protocol) ||
+      !(
+        parsedUrl.hostname === 'imdb.com' ||
+        parsedUrl.hostname.endsWith('.imdb.com')
+      )
+    ) {
+      logger.warn(`⚠️ Enlace de IMDb no seguro ignorado: ${imdbLink}`);
       return '';
     }
+  } catch (_e) {
+    return '';
   }
-
   return imdbLink.replace('/maindetails', '/');
+}
+
+/**
+ * Extrae el enlace de IMDb de la página de Letterboxd.
+ */
+async function extractImdbLink(page: Page): Promise<string> {
+  const imdbLink = await findImdbUrlOnPage(page);
+  return validateImdbUrl(imdbLink);
 }
 
 /**
