@@ -9,34 +9,36 @@ import { UserInput } from './types';
  */
 export function getUserInput(): UserInput {
   const option = readlineSync
-    .question('Selecciona una opción (popular, year, decade): ')
+    .question('Selecciona una opción (popular, year, decade): ', {
+      limit: ['popular', 'year', 'decade'],
+      limitMessage:
+        '⚠️ Opción no válida. Debes elegir: popular, year, o decade.',
+    })
     .toLowerCase();
-
-  if (!['popular', 'year', 'decade'].includes(option)) {
-    throw new Error('Opción no válida. Debe ser popular, year o decade.');
-  }
 
   let yearOrDecade = '';
   if (option === 'year') {
-    yearOrDecade = readlineSync.question('Introduce el año (ej. 2023): ');
-    if (!/^\d{4}$/.test(yearOrDecade)) {
-      throw new Error(
-        'Formato de año no válido. Debe ser de 4 dígitos (ej. 2023).'
-      );
-    }
+    yearOrDecade = readlineSync.question('Introduce el año (ej. 2023): ', {
+      limit: /^\d{4}$/,
+      limitMessage:
+        '⚠️ Formato de año no válido. Debe ser de 4 dígitos (ej. 2023).',
+    });
   } else if (option === 'decade') {
-    yearOrDecade = readlineSync.question('Introduce la década (ej. 1990): ');
-    if (!/^\d{4}$/.test(yearOrDecade)) {
-      throw new Error(
-        'Formato de década no válido. Debe ser de 4 dígitos (ej. 1990).'
-      );
-    }
+    yearOrDecade = readlineSync.question('Introduce la década (ej. 1990): ', {
+      limit: /^\d{4}$/,
+      limitMessage:
+        '⚠️ Formato de década no válido. Debe ser de 4 dígitos (ej. 1990).',
+    });
   }
 
-  const pages = readlineSync.questionInt('Número de páginas a scrapear: ');
-  if (pages <= 0) {
-    throw new Error('El número de páginas debe ser mayor que 0.');
-  }
+  const pagesStr = readlineSync.question('Número de páginas a scrapear: ', {
+    limit: (input: string) => {
+      const num = parseInt(input, 10);
+      return !isNaN(num) && num > 0;
+    },
+    limitMessage: '⚠️ El número de páginas debe ser un entero mayor que 0.',
+  });
+  const pages = parseInt(pagesStr, 10);
 
   return { option, yearOrDecade, pages };
 }
