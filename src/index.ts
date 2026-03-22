@@ -69,7 +69,7 @@ async function main() {
   }
 
   const filename = `letterboxd_${option}${yearOrDecade ? `_${yearOrDecade}` : ''}.csv`;
-  await saveToCSV(movies, filename);
+  await saveToCSV(movies, filename, option);
 
   logger.header('✅ Scraping finalizado.');
 }
