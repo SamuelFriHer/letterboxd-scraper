@@ -18,6 +18,7 @@ export interface UserInput {
   option: string;
   yearOrDecade: string;
   pages: number;
+  directorSlug?: string;
 }
 
 /**
