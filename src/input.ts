@@ -3,19 +3,35 @@ import { UserInput } from './types';
 
 /**
  * Función que solicita por consola la configuración del scraping.
- * Interactivamente pide opción, año o década y el número de páginas, realizando su validación.
  * @returns Un objeto UserInput con las preferencias ingresadas.
- * @throws Lanzará error si el usuario introduce valores no válidos.
  */
 export function getUserInput(): UserInput {
-  const option = readlineSync
+  const option = getOption();
+  const { yearOrDecade, directorSlug } = getExtraParam(option);
+  const pages = getPagesCount(option);
+  return { option, yearOrDecade, pages, directorSlug };
+}
+
+/**
+ * Solicita interactivamente la opción principal del scraper.
+ * @returns La opción seleccionada en minúsculas.
+ */
+function getOption(): string {
+  return readlineSync
     .question('Selecciona una opción (popular, year, decade, director): ', {
       limit: ['popular', 'year', 'decade', 'director'],
       limitMessage:
-        '⚠️ Opción no válida. Debes elegir: popular, year, decade o director.',
+        '⚠️ Opción no válida. Elige popular, year, decade o director.',
     })
     .toLowerCase();
+}
 
+/**
+ * Solicita los parámetros extra que dependan de la opción.
+ * @param option La opción previamente seleccionada.
+ * @returns Un objeto con el año, la década o el slug del director.
+ */
+function getExtraParam(option: string) {
   let yearOrDecade = '';
   let directorSlug = undefined;
 
@@ -24,38 +40,40 @@ export function getUserInput(): UserInput {
       'Introduce el identificador del director (ej. paul-thomas-anderson): ',
       {
         limit: /^[a-z0-9-]+$/,
-        limitMessage:
-          '⚠️ Formato no válido. Usa minúsculas, números y guiones (ej. paul-thomas-anderson).',
+        limitMessage: '⚠️ Usa minúsculas, números y guiones.',
       }
     );
   } else if (option === 'year') {
     yearOrDecade = readlineSync.question('Introduce el año (ej. 2023): ', {
       limit: /^\d{4}$/,
-      limitMessage:
-        '⚠️ Formato de año no válido. Debe ser de 4 dígitos (ej. 2023).',
+      limitMessage: '⚠️ Error. Debe ser de 4 dígitos.',
     });
   } else if (option === 'decade') {
     yearOrDecade = readlineSync.question('Introduce la década (ej. 1990): ', {
       limit: /^\d{4}$/,
-      limitMessage:
-        '⚠️ Formato de década no válido. Debe ser de 4 dígitos (ej. 1990).',
+      limitMessage: '⚠️ Error. Debe ser de 4 dígitos.',
     });
   }
 
-  let pages = 1;
+  return { yearOrDecade, directorSlug };
+}
 
-  if (option !== 'director') {
-    const pagesStr = readlineSync.question('Número de páginas a scrapear: ', {
-      limit: (input: string) => {
-        const num = parseInt(input, 10);
-        return !isNaN(num) && num > 0;
-      },
-      limitMessage: '⚠️ El número de páginas debe ser un entero mayor que 0.',
-    });
-    pages = parseInt(pagesStr, 10);
-  }
+/**
+ * Solicita la cantidad de páginas a scrapear.
+ * @param option La opción previamente seleccionada.
+ * @returns El número de páginas válidas enteras.
+ */
+function getPagesCount(option: string): number {
+  if (option === 'director') return 1;
 
-  return { option, yearOrDecade, pages, directorSlug };
+  const pagesStr = readlineSync.question('Número de páginas a scrapear: ', {
+    limit: (input: string) => {
+      const num = parseInt(input, 10);
+      return !isNaN(num) && num > 0;
+    },
+    limitMessage: '⚠️ El número de páginas debe ser un entero mayor que 0.',
+  });
+  return parseInt(pagesStr, 10);
 }
 
 /**
