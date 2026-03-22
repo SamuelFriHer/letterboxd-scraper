@@ -9,15 +9,26 @@ import { UserInput } from './types';
  */
 export function getUserInput(): UserInput {
   const option = readlineSync
-    .question('Selecciona una opción (popular, year, decade): ', {
-      limit: ['popular', 'year', 'decade'],
+    .question('Selecciona una opción (popular, year, decade, director): ', {
+      limit: ['popular', 'year', 'decade', 'director'],
       limitMessage:
-        '⚠️ Opción no válida. Debes elegir: popular, year, o decade.',
+        '⚠️ Opción no válida. Debes elegir: popular, year, decade o director.',
     })
     .toLowerCase();
 
   let yearOrDecade = '';
-  if (option === 'year') {
+  let directorSlug = undefined;
+
+  if (option === 'director') {
+    directorSlug = readlineSync.question(
+      'Introduce el identificador del director (ej. paul-thomas-anderson): ',
+      {
+        limit: /^[a-z0-9-]+$/,
+        limitMessage:
+          '⚠️ Formato no válido. Usa minúsculas, números y guiones (ej. paul-thomas-anderson).',
+      }
+    );
+  } else if (option === 'year') {
     yearOrDecade = readlineSync.question('Introduce el año (ej. 2023): ', {
       limit: /^\d{4}$/,
       limitMessage:
@@ -31,16 +42,20 @@ export function getUserInput(): UserInput {
     });
   }
 
-  const pagesStr = readlineSync.question('Número de páginas a scrapear: ', {
-    limit: (input: string) => {
-      const num = parseInt(input, 10);
-      return !isNaN(num) && num > 0;
-    },
-    limitMessage: '⚠️ El número de páginas debe ser un entero mayor que 0.',
-  });
-  const pages = parseInt(pagesStr, 10);
+  let pages = 1;
 
-  return { option, yearOrDecade, pages };
+  if (option !== 'director') {
+    const pagesStr = readlineSync.question('Número de páginas a scrapear: ', {
+      limit: (input: string) => {
+        const num = parseInt(input, 10);
+        return !isNaN(num) && num > 0;
+      },
+      limitMessage: '⚠️ El número de páginas debe ser un entero mayor que 0.',
+    });
+    pages = parseInt(pagesStr, 10);
+  }
+
+  return { option, yearOrDecade, pages, directorSlug };
 }
 
 /**
@@ -54,8 +69,13 @@ export function getUserInput(): UserInput {
 export function buildLetterboxdUrl(
   option: string,
   yearOrDecade: string,
-  page: number
+  page: number,
+  directorSlug?: string
 ): string {
+  if (option === 'director' && directorSlug) {
+    return `https://letterboxd.com/director/${directorSlug}/`;
+  }
+
   let url = 'https://letterboxd.com/films/';
 
   if (option === 'year') {
