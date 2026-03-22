@@ -22,7 +22,7 @@ export interface UserInput {
 }
 
 /**
- * Interfaz simplificada para almacenar el enlace y título 
+ * Interfaz simplificada para almacenar el enlace y título
  * provisional de una película antes de obtener todos los detalles.
  */
 export interface MovieLink {
