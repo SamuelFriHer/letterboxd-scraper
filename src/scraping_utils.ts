@@ -29,7 +29,9 @@ export async function handleCookieConsent(page: Page): Promise<void> {
  */
 export async function waitForMovies(page: Page): Promise<void> {
   try {
-    await page.waitForSelector('.posteritem', { timeout: 30000 });
+    await page.waitForSelector('.posteritem, .tooltip.griditem', {
+      timeout: 30000,
+    });
   } catch (error) {
     logger.error('❌ Error: Timeout buscando películas.');
     throw error;
@@ -44,7 +46,9 @@ export async function waitForMovies(page: Page): Promise<void> {
  */
 export async function extractMoviesFromPage(page: Page): Promise<MovieLink[]> {
   return page.evaluate(() => {
-    const movieElements = document.querySelectorAll('.posteritem');
+    const movieElements = document.querySelectorAll(
+      '.posteritem, .tooltip.griditem'
+    );
     const movieList: { title: string; link: string }[] = [];
 
     movieElements.forEach((movie) => {
