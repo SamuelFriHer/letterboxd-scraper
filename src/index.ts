@@ -51,14 +51,14 @@ async function processMovieBatches(
 async function main() {
   logger.header('🎬 Bienvenido al Scraper de Letterboxd');
 
-  const { option, yearOrDecade, pages } = getUserInput();
+  const { option, yearOrDecade, pages, directorSlug } = getUserInput();
   const browser = await puppeteer.launch(config.puppeteer);
 
   const movies: MovieDetails[] = [];
 
   try {
     for (let page = 1; page <= pages; page++) {
-      const url = buildLetterboxdUrl(option, yearOrDecade, page);
+      const url = buildLetterboxdUrl(option, yearOrDecade, page, directorSlug);
       logger.header(`\n📄 Explorando página ${page} de ${pages}: ${url}`);
 
       const movieLinks = await scrapeLetterboxdPage(url, browser);
@@ -68,7 +68,15 @@ async function main() {
     await browser.close();
   }
 
-  const filename = `letterboxd_${option}${yearOrDecade ? `_${yearOrDecade}` : ''}.csv`;
+  let filename = `letterboxd_${option}`;
+  if (option === 'director' && directorSlug) {
+    filename += `_${directorSlug}.csv`;
+  } else if (yearOrDecade) {
+    filename += `_${yearOrDecade}.csv`;
+  } else {
+    filename += `.csv`;
+  }
+
   await saveToCSV(movies, filename, option);
 
   logger.header('✅ Scraping finalizado.');
