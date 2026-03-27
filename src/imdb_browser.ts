@@ -1,5 +1,5 @@
 import { Browser, Page } from 'puppeteer';
-import { optimizePageLoad } from './utils';
+import { optimizePageLoad, validateSafeUrl } from './utils';
 
 class ImdbBrowserManager {
   private static isHandlingCookies = false;
@@ -88,6 +88,7 @@ export async function createImdbPage(
   browser: Browser,
   imdbUrl: string
 ): Promise<{ page: Page; release: () => void }> {
+  validateSafeUrl(imdbUrl, 'imdb.com');
   await ImdbBrowserManager.ensureImdbCookies(browser);
   await ImdbBrowserManager.acquireImdbPermit();
 
