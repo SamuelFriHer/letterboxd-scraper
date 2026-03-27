@@ -77,35 +77,71 @@ export async function extractMetascore(
   taskLogger: TaskLogger
 ): Promise<number> {
   try {
-    // Check if any metascore container exists in the initial DOM first
-    // to avoid the 20-second timeout penalty for movies without one.
-    const hasMetascoreContainer = await page.evaluate(() => {
-      // First, check for Metascore container nodes that denote its existence
-      // Many older movies don't have Metascores. Waiting 20s for them is a huge penalty.
-      // This checks the initial DOM (before dynamic JS might insert the actual score)
-      // to see if the page even *might* have a Metascore area.
-      const possibleNodes = document.querySelectorAll(
-        '.three-Elements, a[href*="criticreviews"], [data-testid="score-box-metacritic"], .score-box--metacritic, .metacritic-score-box, .titleReviewBarItem'
-      );
-      if (possibleNodes.length > 0) return true;
+    // IMDb detail pages load their data via a large __NEXT_DATA__ JSON script object or urql-state dynamically.
+    // Instead of waiting the full 20s for the visual DOM element to appear when a movie lacks a Metascore,
+    // we wait a short time (3s) for either the visual element OR the data island to load.
+    await page
+      .waitForFunction(
+        () => {
+          // Check for visual elements first
+          if (
+            document.querySelector(
+              '.three-Elements, a[href*="criticreviews"], [data-testid="score-box-metacritic"], .score-box--metacritic, .metacritic-score-box, .titleReviewBarItem'
+            )
+          ) {
+            return true;
+          }
 
-      // Also check if the raw text "metascore" exists anywhere in the body text content
+          // Alternatively, if the core data island is loaded and populated, stop waiting
+          const dataIsland = document.querySelector('script#__NEXT_DATA__');
+          if (dataIsland && dataIsland.innerHTML.length > 1000) {
+            try {
+              JSON.parse(dataIsland.innerHTML);
+              return true;
+            } catch (_e) {
+              return false;
+            }
+          }
+
+          return false;
+        },
+        { timeout: 3000 }
+      )
+      .catch(() => {});
+
+    // Now synchronously check if a Metascore exists, either in DOM or data
+    const hasMetascoreContainer = await page.evaluate(() => {
+      // Visual check
       if (
-        document.body &&
-        document.body.textContent &&
-        document.body.textContent.toLowerCase().includes('metascore')
+        document.querySelector(
+          '.three-Elements, a[href*="criticreviews"], [data-testid="score-box-metacritic"], .score-box--metacritic, .metacritic-score-box, .titleReviewBarItem'
+        )
       ) {
         return true;
+      }
+
+      // Data island check
+      const dataIsland = document.querySelector('script#__NEXT_DATA__');
+      if (dataIsland && dataIsland.innerHTML.length > 1000) {
+        try {
+          const data = JSON.parse(dataIsland.innerHTML);
+          const metacritic =
+            data?.props?.pageProps?.aboveTheFoldData?.metacritic;
+          return metacritic !== null && metacritic !== undefined;
+        } catch (_e) {
+          return false;
+        }
       }
 
       return false;
     });
 
     if (!hasMetascoreContainer) {
-      taskLogger.warn('⚠️ No se encontró el contenedor de Metascore (SSR).');
+      taskLogger.warn('⚠️ No se encontró el contenedor de Metascore en datos.');
       return -1;
     }
 
+    // Since we know the data exists, wait a short time for the actual text to be rendered
     await page
       .waitForFunction(
         () => {
@@ -114,7 +150,7 @@ export async function extractMetascore(
           );
           return el && el.textContent && el.textContent.trim().length > 0;
         },
-        { timeout: 20000 }
+        { timeout: 5000 }
       )
       .catch(() => {});
 
