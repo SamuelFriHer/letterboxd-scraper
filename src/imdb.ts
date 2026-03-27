@@ -77,11 +77,40 @@ export async function extractMetascore(
   taskLogger: TaskLogger
 ): Promise<number> {
   try {
+    // Check if any metascore container exists in the initial DOM first
+    // to avoid the 20-second timeout penalty for movies without one.
+    const hasMetascoreContainer = await page.evaluate(() => {
+      // First, check for Metascore container nodes that denote its existence
+      // Many older movies don't have Metascores. Waiting 20s for them is a huge penalty.
+      // This checks the initial DOM (before dynamic JS might insert the actual score)
+      // to see if the page even *might* have a Metascore area.
+      const possibleNodes = document.querySelectorAll(
+        '.three-Elements, a[href*="criticreviews"], [data-testid="score-box-metacritic"], .score-box--metacritic, .metacritic-score-box, .titleReviewBarItem'
+      );
+      if (possibleNodes.length > 0) return true;
+
+      // Also check if the raw text "metascore" exists anywhere in the body text content
+      if (
+        document.body &&
+        document.body.textContent &&
+        document.body.textContent.toLowerCase().includes('metascore')
+      ) {
+        return true;
+      }
+
+      return false;
+    });
+
+    if (!hasMetascoreContainer) {
+      taskLogger.warn('⚠️ No se encontró el contenedor de Metascore (SSR).');
+      return -1;
+    }
+
     await page
       .waitForFunction(
         () => {
           const el = document.querySelector(
-            'a[href*="criticreviews"] .metacritic-score-box, a[href*="criticreviews"] .score, [data-testid="score-box-metacritic"]'
+            'a[href*="criticreviews"] .metacritic-score-box, a[href*="criticreviews"] .score, [data-testid="score-box-metacritic"], .score-box--metacritic'
           );
           return el && el.textContent && el.textContent.trim().length > 0;
         },
