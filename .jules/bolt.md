@@ -13,3 +13,8 @@
 
 **Learning:** Using `waitUntil: 'networkidle2'` on tracker-heavy sites like Letterboxd's list pages causes Puppeteer to wait ~25s per page because tracking scripts and slow third-party requests keep the network active. Since the application explicitly uses a `waitForSelector` (`waitForMovies`) to ensure the DOM nodes for `.posteritem` are ready, waiting for network idle is completely redundant and causes a massive bottleneck.
 **Action:** Always prefer `waitUntil: 'domcontentloaded'` over `networkidle2` when navigating, especially if you already have explicit element wait logic right after the navigation. This reduces load time from ~25s to <1s.
+
+## 2024-05-23 - [Puppeteer Timeout Penalties on Missing Elements]
+
+**Learning:** When using `page.waitForFunction` or `waitForSelector` to look for an element that might not exist (e.g., Metascore on older IMDb movies), Puppeteer will wait the full timeout duration (20 seconds) before failing. Because the detail pages are mostly Server-Side Rendered (SSR), if the element or its parent container isn't present in the initial DOM right after `domcontentloaded`, it likely won't appear at all. This caused an artificial 20-second delay for every movie lacking a Metascore.
+**Action:** Before executing a long `waitForFunction` for an element that might not exist on an SSR page, perform a quick synchronous check (e.g., `page.evaluate`) against the initial DOM to see if the element, its container, or related text exists. If it doesn't, fail fast and bypass the timeout wait completely.
