@@ -1,0 +1,9 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "out": "docs",
+  "name": "Letterboxd Scraper API",
+  "readme": "README.md",
+  "excludePrivate": true
+}
