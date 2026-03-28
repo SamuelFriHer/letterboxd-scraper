@@ -62,12 +62,6 @@ export async function cleanupPage(browser: Browser): Promise<void> {
 }
 
 /**
- * Crea datos parciales de película basados en el slug en caso de fallos,
- * evitando que la ejecución falle por completo.
- * @param slug El identificador de la URL de la película (slug).
- * @returns Un objeto MovieDetails parcial con valores por defecto.
- */
-/**
  * Valida de forma estricta que una URL utilice un esquema seguro (http/https)
  * y que su dominio pertenezca a un dominio permitido para prevenir ataques
  * SSRF (Server-Side Request Forgery) y LFI (Local File Inclusion).
@@ -92,6 +86,12 @@ export function validateSafeUrl(url: string, allowedDomain: string): void {
   }
 }
 
+/**
+ * Crea datos parciales de película basados en el slug en caso de fallos,
+ * evitando que la ejecución falle por completo.
+ * @param slug El identificador de la URL de la película (slug).
+ * @returns Un objeto MovieDetails parcial con valores por defecto.
+ */
 export function createPartialMovieData(slug: string): MovieDetails {
   return {
     title: slug.replace(/-/g, ' '),
