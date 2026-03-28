@@ -1,7 +1,14 @@
 import readlineSync from 'readline-sync';
 import { ScrapingConfiguration } from '../../domain/models/ScrapingConfiguration';
 
+/**
+ * CLI boundary controller that actively manages interactive user prompts.
+ */
 export class UserInputController {
+  /**
+   * Triggers the comprehensive interactive terminal input data process.
+   * @returns The dynamically assembled scraping configuration map.
+   */
   public promptConfiguration(): ScrapingConfiguration {
     const option = this.promptOption();
     const extraParams = this.promptExtraParams(option);

@@ -5,16 +5,27 @@ import { AppConfiguration } from '../../config/AppConfiguration';
 
 puppeteerExtra.use(StealthPlugin());
 
+/**
+ * Coordinates and manages the lifecycle of the Puppeteer browser instance.
+ */
 export class BrowserCoordinator {
   private browser: Browser | null = null;
   private config = AppConfiguration.getInstance();
 
+  /**
+   * Initializes and launches the underlying browser process.
+   * @returns A promise that resolves when the browser rests ready.
+   */
   public async startBrowser(): Promise<void> {
     this.browser = (await puppeteerExtra.launch(
       this.config.puppeteer
     )) as unknown as Browser;
   }
 
+  /**
+   * Gracefully shuts down the active browser instance and its descendants.
+   * @returns A promise that resolves after the teardown routine.
+   */
   public async stopBrowser(): Promise<void> {
     if (this.browser) {
       await this.browser.close();
@@ -22,6 +33,11 @@ export class BrowserCoordinator {
     }
   }
 
+  /**
+   * Exposes the raw browser instance to strictly native delegates.
+   * @returns The Puppeteer browser element.
+   * @throws Error if the browser context remains uninitialized.
+   */
   public getBrowser(): Browser {
     if (!this.browser) {
       throw new Error('Browser is not initialized.');
@@ -29,6 +45,10 @@ export class BrowserCoordinator {
     return this.browser;
   }
 
+  /**
+   * Opens a partially optimized browser tab that only loads minimal DOM and scripts.
+   * @returns A promise resolving to the actively intercepted Puppeteer page.
+   */
   public async openOptimizedPage(): Promise<Page> {
     const page = await this.getBrowser().newPage();
     await page.setRequestInterception(true);
@@ -43,6 +63,10 @@ export class BrowserCoordinator {
     return page;
   }
 
+  /**
+   * Opens an extremely lightweight, aggressive-intercepted page ideal for scraping text payload only.
+   * @returns A promise resolving to the completely stripped Puppeteer page.
+   */
   public async openDetailsOptimizedPage(): Promise<Page> {
     const page = await this.getBrowser().newPage();
     await page.setRequestInterception(true);
@@ -66,6 +90,10 @@ export class BrowserCoordinator {
     return page;
   }
 
+  /**
+   * Securely cleans up dangling or recently used terminal pages to avoid exhausting resources.
+   * @returns A promise encapsulating the safe closure cycle.
+   */
   public async cleanupPage(): Promise<void> {
     if (!this.browser) return;
     try {
@@ -77,6 +105,12 @@ export class BrowserCoordinator {
     }
   }
 
+  /**
+   * Splits an array of elements into consecutive batches of a deterministic size.
+   * @param array The collection to be portioned.
+   * @param size The maximum integer magnitude for each output subgroup.
+   * @returns A matrix consisting of the sequential subgroups.
+   */
   public chunk<T>(array: T[], size: number): T[][] {
     const result: T[][] = [];
     for (let i = 0; i < array.length; i += size) {
@@ -85,6 +119,12 @@ export class BrowserCoordinator {
     return result;
   }
 
+  /**
+   * Validates if a target URL safely belongs strictly to the targeted environment.
+   * @param url The raw destination address.
+   * @param allowedDomain A string boundary denoting the top-level allowed authority.
+   * @throws Error upon protocol or domain mismatch.
+   */
   public validateSafeUrl(url: string, allowedDomain: string): void {
     try {
       const parsedUrl = new URL(url);

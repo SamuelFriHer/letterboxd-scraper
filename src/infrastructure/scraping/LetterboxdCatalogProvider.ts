@@ -4,12 +4,20 @@ import { Movie } from '../../domain/models/Movie';
 import { LoggerService } from '../../domain/ports/LoggerService';
 import { BrowserCoordinator } from '../browser/BrowserCoordinator';
 
+/**
+ * Provider responsible for interacting natively with the Letterboxd web architecture.
+ */
 export class LetterboxdCatalogProvider implements CatalogProvider {
   constructor(
     private browserCoordinator: BrowserCoordinator,
     private logger: LoggerService
   ) {}
 
+  /**
+   * Renders a generic index catalog to discover encapsulated movie elements visually.
+   * @param url The directory list URL targeted.
+   * @returns An array representing the fundamental linkage details.
+   */
   public async exploreCatalogPage(
     url: string
   ): Promise<{ title: string; link: string }[]> {
@@ -26,6 +34,11 @@ export class LetterboxdCatalogProvider implements CatalogProvider {
     return movies;
   }
 
+  /**
+   * Retrieves specific structural attributes and outgoing link nodes from an isolated film page.
+   * @param url The exact specific movie URL to evaluate.
+   * @returns An object partially containing the structured payload attributes.
+   */
   public async getMovieDetails(
     url: string
   ): Promise<Partial<Movie> & { imdbLink?: string }> {

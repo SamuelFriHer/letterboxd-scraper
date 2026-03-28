@@ -5,9 +5,18 @@ import { MovieStorage } from '../../domain/ports/MovieStorage';
 import { Movie } from '../../domain/models/Movie';
 import { AppConfiguration } from '../../config/AppConfiguration';
 
+/**
+ * A storage execution implementation that saves scraped movies to CSV files.
+ */
 export class CsvMovieStorage implements MovieStorage {
   private config = AppConfiguration.getInstance();
 
+  /**
+   * Evaluates movies and writes valid entries (Metascore > 80) to a persistent CSV file.
+   * @param movies The complete list of movies retrieved.
+   * @param option The targeted retrieval strategy defining the folder structure.
+   * @param identifier Optional entity identifier to dynamically construct the filename.
+   */
   public async save(
     movies: Movie[],
     option: string,
