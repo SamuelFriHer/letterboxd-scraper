@@ -8,7 +8,8 @@
     "start": "tsc && node dist/main.js",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "build": "tsc"
+    "build": "tsc",
+    "docs": "typedoc"
   },
   "repository": {
     "type": "git",
@@ -34,6 +35,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "prettier": "^3.8.1",
     "ts-node": "^10.9.2",
+    "typedoc": "^0.28.18",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0"
   },
