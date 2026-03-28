@@ -1,107 +1,110 @@
 # Letterboxd Scraper
 
-## Descripción
+## Overview
 
-`letterboxd-scraper` es una herramienta para scrapear información de películas desde [Letterboxd](https://letterboxd.com). Permite obtener detalles como el título, año, directores y Metascore de películas populares, por año o por década, y guardar los resultados en un archivo CSV.
+`letterboxd-scraper` is a tool for scraping movie information from [Letterboxd](https://letterboxd.com). It allows you to gather details such as title, release year, directors, and Metascore for popular movies, movies from a specific year or decade, or movies from a specific director. The results are filtered (only movies with a Metascore > 80) and seamlessly saved into organized CSV files.
 
-## Características
+## Features
 
-- Scrapea películas populares, por año o por década desde Letterboxd.
-- Obtiene detalles de cada película, incluyendo:
-  - Título
-  - Año de lanzamiento
-  - Directores
-  - Metascore (si está disponible en IMDb)
-- Filtra películas con un Metascore mayor a 80.
-- Guarda los resultados en un archivo CSV.
+- Scrape movies by defining criteria: `popular`, `year`, `decade`, or `director`.
+- Extracted details include:
+  - Title
+  - Release Year
+  - Directors
+  - Metascore (retrieved dynamically from IMDb, including cookie consent handling).
+- **Filtering:** Automatically filters out movies with a Metascore of 80 or lower.
+- **Smart Output Organization:** Results are exported as CSV files and neatly organized into dedicated output subdirectories (e.g., `output/year/`, `output/decade/`, `output/director/`).
+- **Clean Architecture:** Built with a strict layered architecture (Domain, Application, Infrastructure, Presentation), utilizing Object-Oriented Programming and Dependency Injection for high maintainability.
+- **Code Documentation:** Fully documented TypeDoc API integration for clear developer onboarding.
 
-## Requisitos
+## Requirements
 
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/)
 
-No es necesario instalar Node.js ni npm en tu máquina local.
+Node.js and npm are **not** required to be installed on your local machine, as the app is containerized.
 
-## Instalación y Configuración
+## Installation and Setup
 
-1. Clona este repositorio:
+1. Clone this repository:
 
    ```bash
    git clone git@github.com:SamuelFriHer/letterboxd-scraper.git
    cd letterboxd-scraper
    ```
 
-2. Crea un archivo `.env` con tu ID de usuario y grupo para evitar problemas de permisos con los archivos generados:
+2. Create a `.env` file with your user and group IDs to avoid file permission issues with the generated output and documentation files:
 
    ```bash
    echo "UID=$(id -u)" > .env
    echo "GID=$(id -g)" >> .env
    ```
 
-## Uso
+## Usage
 
-Para ejecutar el scraper, utiliza el siguiente comando. Esto instalará las dependencias (si no están) y ejecutará el programa:
+To run the scraper, execute the following command. This will initialize the container, install dependencies if necessary, and start the interactive program:
 
 ```bash
 docker compose run --rm scraper
 ```
 
-Sigue las instrucciones en la terminal:
+Follow the interactive prompts in the terminal:
 
-- Selecciona una opción: `popular`, `year` o `decade`.
-- Si seleccionas `year`, introduce el año (por ejemplo, `2023`).
-- Si seleccionas `decade`, introduce la década (por ejemplo, `1990`).
-- Introduce el número de páginas a scrapear.
+- Select an option: `popular`, `year`, `decade`, or `director`.
+- If `year` is selected, enter the year (e.g., `2023`).
+- If `decade` is selected, enter the decade (e.g., `1990`).
+- If `director` is selected, enter the last part of their Letterboxd URL (e.g., `paul-thomas-anderson`).
+- Enter the number of pages to scrape (for non-director options).
 
-Los datos se guardarán en un archivo CSV dentro de la carpeta `output`.
+The extracted data will be saved in a corresponding directory inside the `output` folder.
 
-## Mantenimiento y Desarrollo
+## Development and Maintenance
 
-Puedes ejecutar cualquier comando de npm utilizando `docker compose run`. Aquí tienes algunos ejemplos comunes:
+You can run any npm command inside the container using `docker compose run`. 
 
-### Instalar nuevas dependencias
-
+### Generating Documentation
+To generate TypeDoc documentation from the source code:
 ```bash
-docker compose run --rm scraper npm install <nombre-paquete>
+docker compose run --rm scraper npm run docs
+```
+The documentation will be generated in the `docs/` folder.
+
+### Adding Dependencies
+```bash
+docker compose run --rm scraper npm install <package-name>
 ```
 
-### Ejecutar Linter
-
-Para verificar el código con ESLint:
-
+### Running the Linter
+To verify code formatting with ESLint:
 ```bash
 docker compose run --rm scraper npm run lint
 ```
 
-### Formatear código
-
-Para formatear el código con Prettier:
-
+### Formatting Code
+To format the code using Prettier:
 ```bash
 docker compose run --rm scraper npm run format
 ```
 
-### Reconstruir el proyecto
-
-Si necesitas recompilar el TypeScript manualmente:
-
+### Rebuilding the Project
+To compile the TypeScript code manually:
 ```bash
 docker compose run --rm scraper npm run build
 ```
 
-## Ejemplo
+## Example Walkthrough
 
-Si seleccionas `year` con el año `2023` y 2 páginas, el programa generará un archivo llamado `letterboxd_year_2023.csv` con las películas que tengan un Metascore mayor a 80.
+If you select `director` and input `paul-thomas-anderson`, the program will scrape the director's page, extract all featured movies, bypass any IMDb cookie banners, look up their Metascores, and generate an intuitively named CSV log in `output/director/` containing all his films holding a Metascore strictly above 80.
 
-## Notas
+## Notes
 
-- El programa utiliza Puppeteer en modo `headless` dentro del contenedor.
-- Los archivos generados en `output` y los cambios en el código se reflejarán en tu máquina local gracias a los volúmenes de Docker.
+- The project controls Puppeteer in `headless` mode.
+- Output artifacts (CSV files, TypeDoc HTML docs) and live code modifications are mirrored instantly to your local machine via Docker volumes.
 
-## Contribuciones
+## Contributing
 
-¡Las contribuciones son bienvenidas! Si encuentras un problema o tienes una idea para mejorar el proyecto, abre un issue o envía un pull request.
+Contributions are welcome! If you find an issue or have an improvement suggestion, feel free to open an issue or submit a pull request. 
 
-## Licencia
+## License
 
-Este proyecto está licenciado bajo la [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
