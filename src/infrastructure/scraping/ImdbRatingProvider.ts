@@ -3,6 +3,9 @@ import { RatingProvider } from '../../domain/ports/RatingProvider';
 import { TaskLoggerService } from '../../domain/ports/LoggerService';
 import { BrowserCoordinator } from '../browser/BrowserCoordinator';
 
+/**
+ * Concrete provider that navigates to IMDb pages to reliably extract Metascores.
+ */
 export class ImdbRatingProvider implements RatingProvider {
   private isHandlingCookies = false;
   private imdbCookiesHandled = false;
@@ -12,6 +15,12 @@ export class ImdbRatingProvider implements RatingProvider {
 
   constructor(private browserCoordinator: BrowserCoordinator) {}
 
+  /**
+   * Opens the targeted IMDb path and searches the DOM structure for its Metascore metrics.
+   * @param imdbUrl The complete URL locating the IMDb asset.
+   * @param taskLogger The logger to transmit execution progress steps.
+   * @returns The integer Metascore metric, or -1 if unavailable globally.
+   */
   public async getMetascore(
     imdbUrl: string,
     taskLogger: TaskLoggerService

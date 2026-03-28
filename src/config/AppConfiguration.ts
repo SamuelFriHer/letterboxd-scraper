@@ -1,5 +1,8 @@
 import path from 'path';
 
+/**
+ * Singleton configuration provider serving global application variables and paths.
+ */
 export class AppConfiguration {
   private static readonly instance = new AppConfiguration();
 
@@ -26,6 +29,10 @@ export class AppConfiguration {
 
   private constructor() {}
 
+  /**
+   * Retrieves the singular instantiation of the active configuration properties.
+   * @returns The application configuration singleton object.
+   */
   public static getInstance(): AppConfiguration {
     return AppConfiguration.instance;
   }

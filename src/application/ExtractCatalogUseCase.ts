@@ -6,6 +6,9 @@ import { MovieStorage } from '../domain/ports/MovieStorage';
 import { LoggerService } from '../domain/ports/LoggerService';
 import { BrowserCoordinator } from '../infrastructure/browser/BrowserCoordinator';
 
+/**
+ * Application use case orchestrating the complete catalog scraping workflow.
+ */
 export class ExtractCatalogUseCase {
   constructor(
     private browserCoordinator: BrowserCoordinator,
@@ -15,6 +18,11 @@ export class ExtractCatalogUseCase {
     private logger: LoggerService
   ) {}
 
+  /**
+   * Executes the full scraping process based on the specified input parameters.
+   * @param config The requested scraping configuration attributes.
+   * @returns A promise that resolves when the overall process finalizes successfully.
+   */
   public async execute(config: ScrapingConfiguration): Promise<void> {
     await this.browserCoordinator.startBrowser();
     const movies: Movie[] = [];

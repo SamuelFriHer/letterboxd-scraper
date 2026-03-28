@@ -6,6 +6,10 @@ import { ImdbRatingProvider } from './infrastructure/scraping/ImdbRatingProvider
 import { CsvMovieStorage } from './infrastructure/storage/CsvMovieStorage';
 import { ExtractCatalogUseCase } from './application/ExtractCatalogUseCase';
 
+/**
+ * Initializes and bootstraps the main application dependencies.
+ * Assembles the scraping workflow utilizing layered-architecture providers.
+ */
 async function bootstrap() {
   const logger = new ConsoleLogger();
   logger.header('\n🎬 Bienvenido al Scraper de Letterboxd\n');
