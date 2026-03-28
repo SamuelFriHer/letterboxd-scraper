@@ -45,13 +45,14 @@ function getExtraParam(option: string) {
     );
   } else if (option === 'year') {
     yearOrDecade = readlineSync.question('Introduce el año (ej. 2023): ', {
-      limit: /^\d{4}$/,
-      limitMessage: '⚠️ Error. Debe ser de 4 dígitos.',
+      limit: /^(18|19|20)\d{2}$/,
+      limitMessage: '⚠️ Error. Debe ser un año válido de 4 dígitos (ej. 2023).',
     });
   } else if (option === 'decade') {
     yearOrDecade = readlineSync.question('Introduce la década (ej. 1990): ', {
-      limit: /^\d{4}$/,
-      limitMessage: '⚠️ Error. Debe ser de 4 dígitos.',
+      limit: /^(18|19|20)\d0$/,
+      limitMessage:
+        '⚠️ Error. Debe ser una década válida terminada en 0 (ej. 1980, 1990, 2000).',
     });
   }
 
