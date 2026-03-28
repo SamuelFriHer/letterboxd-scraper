@@ -62,6 +62,31 @@ export async function cleanupPage(browser: Browser): Promise<void> {
 }
 
 /**
+ * Valida de forma estricta que una URL utilice un esquema seguro (http/https)
+ * y que su dominio pertenezca a un dominio permitido para prevenir ataques
+ * SSRF (Server-Side Request Forgery) y LFI (Local File Inclusion).
+ * @param url La URL a validar.
+ * @param allowedDomain El dominio principal permitido (ej. 'letterboxd.com').
+ * @throws {Error} Si la URL no es segura o su dominio no está permitido.
+ */
+export function validateSafeUrl(url: string, allowedDomain: string): void {
+  try {
+    const parsedUrl = new URL(url);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new Error(`Protocolo inseguro: ${parsedUrl.protocol}`);
+    }
+    if (
+      parsedUrl.hostname !== allowedDomain &&
+      !parsedUrl.hostname.endsWith(`.${allowedDomain}`)
+    ) {
+      throw new Error(`Dominio no permitido: ${parsedUrl.hostname}`);
+    }
+  } catch (_error) {
+    throw new Error(`URL insegura o inválida: ${url}`);
+  }
+}
+
+/**
  * Crea datos parciales de película basados en el slug en caso de fallos,
  * evitando que la ejecución falle por completo.
  * @param slug El identificador de la URL de la película (slug).

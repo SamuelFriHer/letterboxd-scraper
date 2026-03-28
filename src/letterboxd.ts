@@ -5,6 +5,7 @@ import {
   createPartialMovieData,
   optimizePageLoad,
   optimizePageLoadDetails,
+  validateSafeUrl,
 } from './utils';
 import { getMetascore } from './imdb';
 import { logger, TaskLogger } from './logger';
@@ -26,6 +27,7 @@ export async function scrapeLetterboxdPage(
   url: string,
   browser: Browser
 ): Promise<MovieLink[]> {
+  validateSafeUrl(url, 'letterboxd.com');
   const page = await browser.newPage();
   await optimizePageLoad(page);
 
@@ -60,6 +62,7 @@ export async function fetchMovieDetailsFromPage(
   url: string,
   browser: Browser
 ): Promise<{ page: Page; details: MovieDetails }> {
+  validateSafeUrl(url, 'letterboxd.com');
   const page = await browser.newPage();
   await optimizePageLoadDetails(page);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
