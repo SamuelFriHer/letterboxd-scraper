@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "tsc && node dist/main.js",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -26,6 +26,7 @@
     "readline-sync": "^1.4.10"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.1.0",
     "@types/readline-sync": "^1.4.8",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
@@ -33,7 +34,9 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
+    "jest": "^30.3.0",
     "prettier": "^3.8.1",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "typedoc": "^0.28.18",
     "typescript": "^5.9.3",
