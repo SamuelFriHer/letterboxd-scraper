@@ -16,6 +16,8 @@
 - **Smart Output Organization:** Results are exported as CSV files and neatly organized into dedicated output subdirectories (e.g., `output/year/`, `output/decade/`, `output/director/`).
 - **Clean Architecture:** Built with a strict layered architecture (Domain, Application, Infrastructure, Presentation), utilizing Object-Oriented Programming and Dependency Injection for high maintainability.
 - **Code Documentation:** Fully documented TypeDoc API integration for clear developer onboarding.
+- **Unit Testing:** Comprehensive test suite powered by Jest, enforcing 100% strict type safety.
+- **Continuous Integration:** Automated build, linting, formatting, and testing pipelines driven by GitHub Actions.
 
 ## Requirements
 
@@ -60,34 +62,52 @@ The extracted data will be saved in a corresponding directory inside the `output
 
 ## Development and Maintenance
 
-You can run any npm command inside the container using `docker compose run`. 
+You can run any npm command inside the container using `docker compose run`.
+
+### Running Tests
+
+To execute the unit test suite via Jest:
+
+```bash
+docker compose run --rm scraper npm run test
+```
 
 ### Generating Documentation
+
 To generate TypeDoc documentation from the source code:
+
 ```bash
 docker compose run --rm scraper npm run docs
 ```
+
 The documentation will be generated in the `docs/` folder.
 
 ### Adding Dependencies
+
 ```bash
 docker compose run --rm scraper npm install <package-name>
 ```
 
 ### Running the Linter
+
 To verify code formatting with ESLint:
+
 ```bash
 docker compose run --rm scraper npm run lint
 ```
 
 ### Formatting Code
+
 To format the code using Prettier:
+
 ```bash
 docker compose run --rm scraper npm run format
 ```
 
 ### Rebuilding the Project
+
 To compile the TypeScript code manually:
+
 ```bash
 docker compose run --rm scraper npm run build
 ```
@@ -103,7 +123,7 @@ If you select `director` and input `paul-thomas-anderson`, the program will scra
 
 ## Contributing
 
-Contributions are welcome! If you find an issue or have an improvement suggestion, feel free to open an issue or submit a pull request. 
+Contributions are welcome! If you find an issue or have an improvement suggestion, feel free to open an issue or submit a pull request.
 
 ## License
 
