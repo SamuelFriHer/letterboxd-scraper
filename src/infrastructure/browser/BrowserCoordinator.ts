@@ -138,7 +138,7 @@ export class BrowserCoordinator {
         throw new Error(`Dominio no permitido: ${parsedUrl.hostname}`);
       }
     } catch (_error) {
-      throw new Error(`URL insegura o inválida: ${url}`);
+      throw new Error(`URL insegura o inválida: ${url}`, { cause: _error });
     }
   }
 }
