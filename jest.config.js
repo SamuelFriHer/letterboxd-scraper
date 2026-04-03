@@ -6,3 +6,11 @@ export const testMatch = ['**/tests/**/*.spec.ts', '**/tests/**/*.test.ts'];
 export const collectCoverage = true;
 export const coverageDirectory = 'coverage';
 export const clearMocks = true;
+export const transform = {
+  '^.+\\.tsx?$': [
+    'ts-jest',
+    {
+      tsconfig: 'tests/tsconfig.json',
+    },
+  ],
+};
