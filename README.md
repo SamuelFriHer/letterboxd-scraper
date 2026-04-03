@@ -15,7 +15,6 @@
 - **Filtering:** Automatically filters out movies with a Metascore of 80 or lower.
 - **Smart Output Organization:** Results are exported as CSV files and neatly organized into dedicated output subdirectories (e.g., `output/year/`, `output/decade/`, `output/director/`).
 - **Clean Architecture:** Built with a strict layered architecture (Domain, Application, Infrastructure, Presentation), utilizing Object-Oriented Programming and Dependency Injection for high maintainability.
-- **Code Documentation:** Fully documented TypeDoc API integration for clear developer onboarding.
 - **Unit Testing:** Comprehensive test suite powered by Jest, enforcing 100% strict type safety.
 - **Continuous Integration:** Automated build, linting, formatting, and testing pipelines driven by GitHub Actions.
 
@@ -35,7 +34,7 @@ Node.js and npm are **not** required to be installed on your local machine, as t
    cd letterboxd-scraper
    ```
 
-2. Create a `.env` file with your user and group IDs to avoid file permission issues with the generated output and documentation files:
+2. Create a `.env` file with your user and group IDs to avoid file permission issues with the generated output files:
 
    ```bash
    echo "UID=$(id -u)" > .env
@@ -71,16 +70,6 @@ To execute the unit test suite via Jest:
 ```bash
 docker compose run --rm scraper npm run test
 ```
-
-### Generating Documentation
-
-To generate TypeDoc documentation from the source code:
-
-```bash
-docker compose run --rm scraper npm run docs
-```
-
-The documentation will be generated in the `docs/` folder.
 
 ### Adding Dependencies
 
@@ -119,7 +108,7 @@ If you select `director` and input `paul-thomas-anderson`, the program will scra
 ## Notes
 
 - The project controls Puppeteer in `headless` mode.
-- Output artifacts (CSV files, TypeDoc HTML docs) and live code modifications are mirrored instantly to your local machine via Docker volumes.
+- Output artifacts (CSV files) and live code modifications are mirrored instantly to your local machine via Docker volumes.
 
 ## Contributing
 
