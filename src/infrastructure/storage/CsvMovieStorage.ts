@@ -33,25 +33,8 @@ export class CsvMovieStorage implements MovieStorage {
       return;
     }
 
-    // Sanitize data against CSV Formula Injection
-    const sanitizedMovies = filteredMovies.map((m) => ({
-      ...m,
-      title: this.sanitizeCsvField(m.title),
-      directors: this.sanitizeCsvField(m.directors),
-    }));
-
     const filename = this.generateFilename(option, identifier);
-    await this.writeCsv(outputDir, filename, sanitizedMovies);
-  }
-
-  private sanitizeCsvField(field: string): string {
-    if (!field) return field;
-    // Prevent CSV Formula Injection by prepending a single quote
-    // if the field starts with =, +, -, @, \t, or \r
-    if (/^[=+\-@\t\r]/.test(field)) {
-      return `'${field}`;
-    }
-    return field;
+    await this.writeCsv(outputDir, filename, filteredMovies);
   }
 
   private getOutputDir(option: string): string {

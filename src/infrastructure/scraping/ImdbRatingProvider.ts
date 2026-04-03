@@ -94,17 +94,8 @@ export class ImdbRatingProvider implements RatingProvider {
       await page.setRequestInterception(true);
       page.on('request', (request: HTTPRequest) => {
         const t = request.resourceType();
-        if (
-          [
-            'image',
-            'media',
-            'font',
-            'stylesheet',
-            'script',
-            'xhr',
-            'fetch',
-          ].includes(t)
-        ) {
+        // Allow script, xhr, and fetch because IMDb requires AWS WAF JS challenges
+        if (['image', 'media', 'font', 'stylesheet'].includes(t)) {
           request.abort();
         } else {
           request.continue();
@@ -117,6 +108,12 @@ export class ImdbRatingProvider implements RatingProvider {
         waitUntil: 'domcontentloaded',
         timeout: 45000,
       });
+
+      // AWS WAF might reload the page via JS after domcontentloaded
+      await page
+        .waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 5000 })
+        .catch(() => {});
+
       return { page, release: () => this.releaseImdbPermit() };
     } catch (error) {
       if (page) await page.close();

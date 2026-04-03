@@ -15,9 +15,3 @@
 **Vulnerability:** The scraper navigates directly to URLs built from or scraped as inputs via `page.goto()`. Before, there was no protection against an attacker specifying or a page providing a malicious scheme (like `file://`) or an unexpected domain, which could lead to Local File Inclusion (LFI) or Server-Side Request Forgery (SSRF).
 **Learning:** We need strict, centralized validation of the protocol schema (`http:` or `https:`) and the allowed domain directly prior to calling `page.goto()`. While some domain-specific scraping methods had informal checks, they weren't robust or reusable across all navigation actions.
 **Prevention:** Implement a `validateSafeUrl(url, allowedDomain)` utility utilizing the native `URL` constructor to enforce an explicit allowlist on `protocol` and `hostname`. Always invoke this before any unverified `page.goto()` navigation.
-
-## 2024-05-16 - Prevent CSV Formula Injection from scraped data
-
-**Vulnerability:** Scraped text for movie titles and directors was placed directly into CSV output. If a user maliciously creates a Letterboxd profile or movie with a title starting with special characters like `=`, `+`, `-`, or `@`, spreadsheet software like Excel could execute it as a formula upon opening the CSV.
-**Learning:** Even though the source (Letterboxd) might seem safe, the underlying data is essentially untrusted user input. Any text exported to a structured format like CSV can become an execution vector in the consumer's local environment.
-**Prevention:** Added a `sanitizeCsvField` method in the storage layer that prepends a single quote (`'`) to any string starting with formula-trigger characters (`=`, `+`, `-`, `@`, `\t`, `\r`) before saving to CSV.

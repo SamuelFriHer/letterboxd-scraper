@@ -20,5 +20,10 @@
 **Action:** Before executing a long `waitForFunction` for an element that might not exist on an SSR page, perform a quick synchronous check (e.g., `page.evaluate`) against the initial DOM to see if the element, its container, or related text exists. If it doesn't, fail fast and bypass the timeout wait completely.
 
 ## 2026-04-03 - [Letterboxd DOM React Migration]
+
 **Learning:** Letterboxd movie lists often don't immediately render `.posteritem` because it is encapsulated deeply within a client-side rendered React component. Waiting for this specific class causes 30s timeouts.
 **Action:** Use `waitForFunction` to wait for `.react-component` which is available much earlier in the DOM tree, avoiding false-positive timeout errors.
+
+## 2026-04-03 - [IMDb AWS WAF Challenge]
+**Learning:** While Metascores are present in IMDb's initial SSR HTML, blocking `script` execution via request interception triggers an AWS WAF challenge page instead of returning the movie document.
+**Action:** When blocking requests for speed on IMDb, always allow `script` requests so the JS challenge passes. Additionally, handle potential JS-triggered auto-reloads by appending `await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 5000 }).catch(() => {})` after the initial `goto`.

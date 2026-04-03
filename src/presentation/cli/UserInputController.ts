@@ -24,15 +24,11 @@ export class UserInputController {
 
   private promptOption(): string {
     return readlineSync
-      .question(
-        'Selecciona una opción (popular, year, decade, director) [popular]: ',
-        {
-          limit: ['popular', 'year', 'decade', 'director'],
-          limitMessage:
-            '⚠️ Opción no válida. Elige popular, year, decade o director.',
-          defaultInput: 'popular',
-        }
-      )
+      .question('Selecciona una opción (popular, year, decade, director): ', {
+        limit: ['popular', 'year', 'decade', 'director'],
+        limitMessage:
+          '⚠️ Opción no válida. Elige popular, year, decade o director.',
+      })
       .toLowerCase();
   }
 
@@ -68,18 +64,13 @@ export class UserInputController {
   private promptPagesCount(option: string): number {
     if (option === 'director') return 1;
 
-    const pagesStr = readlineSync.question(
-      'Número de páginas a scrapear [1]: ',
-      {
-        limit: (input: string) => {
-          if (input === '') return true;
-          const num = parseInt(input, 10);
-          return !isNaN(num) && num > 0;
-        },
-        limitMessage: '⚠️ El número de páginas debe ser un entero mayor que 0.',
-        defaultInput: '1',
-      }
-    );
+    const pagesStr = readlineSync.question('Número de páginas a scrapear: ', {
+      limit: (input: string) => {
+        const num = parseInt(input, 10);
+        return !isNaN(num) && num > 0;
+      },
+      limitMessage: '⚠️ El número de páginas debe ser un entero mayor que 0.',
+    });
     return parseInt(pagesStr, 10);
   }
 }

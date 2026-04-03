@@ -18,6 +18,7 @@ describe('ImdbRatingProvider', () => {
       goto: jest.fn().mockResolvedValue(undefined),
       $: jest.fn().mockResolvedValue(null),
       waitForFunction: jest.fn().mockResolvedValue(undefined),
+      waitForNavigation: jest.fn().mockResolvedValue(undefined),
       evaluate: jest.fn(),
       close: jest.fn().mockResolvedValue(undefined),
     };
