@@ -94,7 +94,17 @@ export class ImdbRatingProvider implements RatingProvider {
       await page.setRequestInterception(true);
       page.on('request', (request: HTTPRequest) => {
         const t = request.resourceType();
-        if (['image', 'media', 'font', 'stylesheet'].includes(t)) {
+        if (
+          [
+            'image',
+            'media',
+            'font',
+            'stylesheet',
+            'script',
+            'xhr',
+            'fetch',
+          ].includes(t)
+        ) {
           request.abort();
         } else {
           request.continue();
@@ -166,6 +176,15 @@ export class ImdbRatingProvider implements RatingProvider {
     taskLogger: TaskLoggerService
   ): Promise<number> {
     try {
+      // First, quickly check if the SSR page gives us any hint that Metascore will exist
+      const hasContainerFast = await this.checkMetascoreFastFail(page);
+      if (!hasContainerFast) {
+        taskLogger.warn(
+          '⚠️ Contenedor de Metascore no hallado en carga inicial (SSR).'
+        );
+        return -1;
+      }
+
       await this.waitForMetascoreElements(page);
       const hasContainer = await this.checkMetascoreExists(page);
       if (!hasContainer) {
@@ -182,11 +201,28 @@ export class ImdbRatingProvider implements RatingProvider {
     }
   }
 
+  private async checkMetascoreFastFail(page: Page): Promise<boolean> {
+    return page.evaluate(() => {
+      // A quick text search in the body is often faster and catches deeply nested SSR data
+      return (
+        document.body.innerHTML.includes('metacritic') ||
+        document.body.innerHTML.includes('NEXT_DATA') ||
+        document.querySelector(
+          '.three-Elements, .metacritic-score-box, .score-box--metacritic, [data-testid="score-box-metacritic"]'
+        ) !== null
+      );
+    });
+  }
+
   private async waitForMetascoreElements(page: Page): Promise<void> {
     await page
       .waitForFunction(
         () => {
-          if (document.querySelector('.three-Elements, .metacritic-score-box'))
+          if (
+            document.querySelector(
+              '.three-Elements, .metacritic-score-box, .score-box--metacritic, [data-testid="score-box-metacritic"]'
+            )
+          )
             return true;
           const dataIsland = document.querySelector('script#__NEXT_DATA__');
           if (dataIsland && dataIsland.innerHTML.length > 1000) {
@@ -206,7 +242,11 @@ export class ImdbRatingProvider implements RatingProvider {
 
   private async checkMetascoreExists(page: Page): Promise<boolean> {
     return page.evaluate(() => {
-      if (document.querySelector('.three-Elements, .metacritic-score-box'))
+      if (
+        document.querySelector(
+          '.three-Elements, .metacritic-score-box, .score-box--metacritic, [data-testid="score-box-metacritic"]'
+        )
+      )
         return true;
       const dataIsland = document.querySelector('script#__NEXT_DATA__');
       if (dataIsland && dataIsland.innerHTML.length > 1000) {

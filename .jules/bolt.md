@@ -18,3 +18,7 @@
 
 **Learning:** When using `page.waitForFunction` or `waitForSelector` to look for an element that might not exist (e.g., Metascore on older IMDb movies), Puppeteer will wait the full timeout duration (20 seconds) before failing. Because the detail pages are mostly Server-Side Rendered (SSR), if the element or its parent container isn't present in the initial DOM right after `domcontentloaded`, it likely won't appear at all. This caused an artificial 20-second delay for every movie lacking a Metascore.
 **Action:** Before executing a long `waitForFunction` for an element that might not exist on an SSR page, perform a quick synchronous check (e.g., `page.evaluate`) against the initial DOM to see if the element, its container, or related text exists. If it doesn't, fail fast and bypass the timeout wait completely.
+
+## 2026-04-03 - [Letterboxd DOM React Migration]
+**Learning:** Letterboxd movie lists often don't immediately render `.posteritem` because it is encapsulated deeply within a client-side rendered React component. Waiting for this specific class causes 30s timeouts.
+**Action:** Use `waitForFunction` to wait for `.react-component` which is available much earlier in the DOM tree, avoiding false-positive timeout errors.

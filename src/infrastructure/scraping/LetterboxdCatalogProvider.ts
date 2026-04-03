@@ -72,9 +72,12 @@ export class LetterboxdCatalogProvider implements CatalogProvider {
 
   private async waitForMovies(page: Page): Promise<void> {
     try {
-      await page.waitForSelector('.posteritem, .tooltip.griditem', {
-        timeout: 30000,
-      });
+      await page.waitForFunction(
+        () => {
+          return document.querySelectorAll('.react-component').length > 0;
+        },
+        { timeout: 30000 }
+      );
     } catch (error) {
       this.logger.error('❌ Error: Timeout buscando películas.');
       throw error;
@@ -85,19 +88,14 @@ export class LetterboxdCatalogProvider implements CatalogProvider {
     page: Page
   ): Promise<{ title: string; link: string }[]> {
     return page.evaluate(() => {
-      const movieElements = document.querySelectorAll(
-        '.posteritem, .tooltip.griditem'
-      );
+      const movieElements = document.querySelectorAll('.react-component');
       const movieList: { title: string; link: string }[] = [];
 
-      movieElements.forEach((movie) => {
-        const component = movie.querySelector('.react-component');
-        if (component) {
-          const title = component.getAttribute('data-item-name') || '';
-          const link = component.getAttribute('data-item-link') || '';
-          if (title && link) {
-            movieList.push({ title, link: `https://letterboxd.com${link}` });
-          }
+      movieElements.forEach((component) => {
+        const title = component.getAttribute('data-item-name') || '';
+        const link = component.getAttribute('data-item-link') || '';
+        if (title && link) {
+          movieList.push({ title, link: `https://letterboxd.com${link}` });
         }
       });
       return movieList;

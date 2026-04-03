@@ -59,6 +59,7 @@ describe('ImdbRatingProvider', () => {
 
   describe('getMetascore', () => {
     it('should successfully extract metascore on first attempt', async () => {
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(true); // checkMetascoreFastFail -> true
       (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(true); // checkMetascoreExists -> true
       (mockPage.evaluate as jest.Mock).mockResolvedValueOnce('85'); // evaluateMetascoreDOM -> '85'
 
@@ -77,7 +78,8 @@ describe('ImdbRatingProvider', () => {
     });
 
     it('should return -1 if metascore text is N/A', async () => {
-      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(true); // hasContainer = true
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(true); // checkMetascoreFastFail -> true
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(true); // checkMetascoreExists -> true
       (mockPage.evaluate as jest.Mock).mockResolvedValueOnce('N/A'); // evaluateMetascoreDOM
 
       const result = await provider.getMetascore(
@@ -91,7 +93,22 @@ describe('ImdbRatingProvider', () => {
       );
     });
 
-    it('should return -1 if container does not exist', async () => {
+    it('should return -1 if container does not exist initially (fast fail)', async () => {
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(false); // hasContainerFast = false
+
+      const result = await provider.getMetascore(
+        'https://www.imdb.com/title/tt1234567/',
+        mockTaskLogger
+      );
+
+      expect(result).toBe(-1);
+      expect(mockTaskLogger.warn).toHaveBeenCalledWith(
+        '⚠️ Contenedor de Metascore no hallado en carga inicial (SSR).'
+      );
+    });
+
+    it('should return -1 if container does not exist after wait', async () => {
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(true); // hasContainerFast = true
       (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(false); // hasContainer = false
 
       const result = await provider.getMetascore(

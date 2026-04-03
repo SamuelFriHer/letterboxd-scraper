@@ -14,6 +14,7 @@ describe('LetterboxdCatalogProvider', () => {
       goto: jest.fn().mockResolvedValue(undefined),
       $: jest.fn().mockResolvedValue(null),
       waitForSelector: jest.fn().mockResolvedValue(undefined),
+      waitForFunction: jest.fn().mockResolvedValue(undefined),
       evaluate: jest.fn(),
       close: jest.fn().mockResolvedValue(undefined),
     };
@@ -62,8 +63,8 @@ describe('LetterboxdCatalogProvider', () => {
         'https://letterboxd.com/films/popular/',
         { waitUntil: 'domcontentloaded' }
       );
-      expect(mockPage.waitForSelector).toHaveBeenCalledWith(
-        '.posteritem, .tooltip.griditem',
+      expect(mockPage.waitForFunction).toHaveBeenCalledWith(
+        expect.any(Function),
         expect.any(Object)
       );
       expect(result).toEqual([
@@ -87,8 +88,8 @@ describe('LetterboxdCatalogProvider', () => {
       );
     });
 
-    it('should throw error if waitForSelector times out', async () => {
-      (mockPage.waitForSelector as jest.Mock).mockRejectedValueOnce(
+    it('should throw error if waitForFunction times out', async () => {
+      (mockPage.waitForFunction as jest.Mock).mockRejectedValueOnce(
         new Error('Timeout')
       );
 
