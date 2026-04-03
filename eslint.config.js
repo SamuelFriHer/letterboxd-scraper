@@ -27,7 +27,6 @@ module.exports = tseslint.config(
   {
     ignores: [
       'dist/',
-      'docs/',
       'node_modules/',
       'output/',
       'coverage/',
