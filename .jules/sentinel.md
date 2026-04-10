@@ -21,3 +21,9 @@
 **Vulnerability:** Scraped text for movie titles and directors was placed directly into CSV output. If a user maliciously creates a Letterboxd profile or movie with a title starting with special characters like `=`, `+`, `-`, or `@`, spreadsheet software like Excel could execute it as a formula upon opening the CSV.
 **Learning:** Even though the source (Letterboxd) might seem safe, the underlying data is essentially untrusted user input. Any text exported to a structured format like CSV can become an execution vector in the consumer's local environment.
 **Prevention:** Added a `sanitizeCsvField` method in the storage layer that prepends a single quote (`'`) to any string starting with formula-trigger characters (`=`, `+`, `-`, `@`, `\t`, `\r`) before saving to CSV.
+
+## 2024-05-18 - Fix Incomplete CSV Formula Injection Protection
+
+**Vulnerability:** While `title` and `directors` were sanitized, `year` and `imdbLink` scraped from external sources were appended directly to the output CSV. An attacker could construct an external entry with these fields containing malicious formulas (starting with `=`, `+`, etc.).
+**Learning:** All fields written to structured, exportable formats like CSV must be systematically validated, as any unsanitized externally sourced data point can execute locally when the output is opened.
+**Prevention:** Extend the internal `sanitizeCsvField()` method usage to explicitly cover all output columns originating from dynamically retrieved payloads.
