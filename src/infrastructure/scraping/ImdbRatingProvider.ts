@@ -94,7 +94,9 @@ export class ImdbRatingProvider implements RatingProvider {
       await page.setRequestInterception(true);
       page.on('request', (request: HTTPRequest) => {
         const t = request.resourceType();
-        if (['image', 'media', 'font', 'stylesheet'].includes(t)) {
+        if (
+          ['image', 'media', 'font', 'stylesheet', 'xhr', 'fetch'].includes(t)
+        ) {
           request.abort();
         } else {
           request.continue();
