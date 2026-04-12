@@ -49,17 +49,29 @@ export class UserInputController {
         }
       );
     } else if (option === 'year') {
-      yearOrDecade = readlineSync.question('Introduce el año (ej. 2023): ', {
-        limit: /^(18|19|20)\d{2}$/,
-        limitMessage:
-          '⚠️ Error. Debe ser un año válido de 4 dígitos (ej. 2023).',
-      });
+      const currentYear = new Date().getFullYear().toString();
+      yearOrDecade = readlineSync.question(
+        `Introduce el año (ej. 2023) [${currentYear}]: `,
+        {
+          limit: /^(18|19|20)\d{2}$/,
+          limitMessage:
+            '⚠️ Error. Debe ser un año válido de 4 dígitos (ej. 2023).',
+          defaultInput: currentYear,
+        }
+      );
     } else if (option === 'decade') {
-      yearOrDecade = readlineSync.question('Introduce la década (ej. 1990): ', {
-        limit: /^(18|19|20)\d0$/,
-        limitMessage:
-          '⚠️ Error. Debe ser una década válida terminada en 0 (ej. 1980).',
-      });
+      const currentDecade = (
+        Math.floor(new Date().getFullYear() / 10) * 10
+      ).toString();
+      yearOrDecade = readlineSync.question(
+        `Introduce la década (ej. 1990) [${currentDecade}]: `,
+        {
+          limit: /^(18|19|20)\d0$/,
+          limitMessage:
+            '⚠️ Error. Debe ser una década válida terminada en 0 (ej. 1980).',
+          defaultInput: currentDecade,
+        }
+      );
     }
 
     return { yearOrDecade, directorSlug };
