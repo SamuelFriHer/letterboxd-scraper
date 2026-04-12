@@ -38,6 +38,8 @@ export class CsvMovieStorage implements MovieStorage {
       ...m,
       title: this.sanitizeCsvField(m.title),
       directors: this.sanitizeCsvField(m.directors),
+      year: this.sanitizeCsvField(m.year),
+      imdbLink: this.sanitizeCsvField(m.imdbLink),
     }));
 
     const filename = this.generateFilename(option, identifier);
