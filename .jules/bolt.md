@@ -18,3 +18,8 @@
 
 **Learning:** When using `page.waitForFunction` or `waitForSelector` to look for an element that might not exist (e.g., Metascore on older IMDb movies), Puppeteer will wait the full timeout duration (20 seconds) before failing. Because the detail pages are mostly Server-Side Rendered (SSR), if the element or its parent container isn't present in the initial DOM right after `domcontentloaded`, it likely won't appear at all. This caused an artificial 20-second delay for every movie lacking a Metascore.
 **Action:** Before executing a long `waitForFunction` for an element that might not exist on an SSR page, perform a quick synchronous check (e.g., `page.evaluate`) against the initial DOM to see if the element, its container, or related text exists. If it doesn't, fail fast and bypass the timeout wait completely.
+
+## 2024-05-24 - [Synchronous DOM Checks on Hydrated Pages]
+
+**Learning:** Replacing wait functions with immediate synchronous DOM checks to fast-fail on dynamically hydrated pages (e.g., IMDb Next.js) is an anti-pattern. This introduces race conditions due to client-side React hydration or network latency, resulting in premature aborts and silent data loss.
+**Action:** Use wait functions instead of synchronous DOM checks on dynamically hydrated pages to ensure the necessary elements have fully loaded before evaluating.

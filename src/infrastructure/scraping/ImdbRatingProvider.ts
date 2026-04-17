@@ -94,7 +94,12 @@ export class ImdbRatingProvider implements RatingProvider {
       await page.setRequestInterception(true);
       page.on('request', (request: HTTPRequest) => {
         const t = request.resourceType();
-        if (['image', 'media', 'font', 'stylesheet'].includes(t)) {
+        // ⚡ Bolt: Block xhr and fetch along with visual assets.
+        // IMDb detail pages serve Metascore data directly in the initial SSR HTML.
+        // Blocking these extra requests significantly improves load times.
+        if (
+          ['image', 'media', 'font', 'stylesheet', 'xhr', 'fetch'].includes(t)
+        ) {
           request.abort();
         } else {
           request.continue();
