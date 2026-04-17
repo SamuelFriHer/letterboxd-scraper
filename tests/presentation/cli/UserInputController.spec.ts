@@ -58,10 +58,10 @@ describe('UserInputController', () => {
     });
   });
 
-  it('should successfully prompt for director configuration', () => {
+  it('should successfully prompt for director configuration and auto-slugify the input', () => {
     (readlineSync.question as jest.Mock).mockReturnValueOnce('director');
     (readlineSync.question as jest.Mock).mockReturnValueOnce(
-      'paul-thomas-anderson'
+      'Paul Thomas Anderson'
     );
 
     const config = controller.promptConfiguration();

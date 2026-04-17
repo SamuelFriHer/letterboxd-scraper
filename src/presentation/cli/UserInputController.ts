@@ -41,13 +41,18 @@ export class UserInputController {
     let directorSlug: string | undefined = undefined;
 
     if (option === 'director') {
-      directorSlug = readlineSync.question(
-        'Introduce el identificador del director (ej. paul-thomas-anderson): ',
+      const rawDirector = readlineSync.question(
+        'Introduce el nombre del director (ej. Paul Thomas Anderson): ',
         {
-          limit: /^[a-z0-9-]+$/,
-          limitMessage: '⚠️ Usa minúsculas, números y guiones.',
+          limit: /^[a-zA-Z0-9\s-]+$/,
+          limitMessage: '⚠️ El nombre contiene caracteres no válidos.',
         }
       );
+      directorSlug = rawDirector
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
     } else if (option === 'year') {
       const currentYear = new Date().getFullYear().toString();
       yearOrDecade = readlineSync.question(

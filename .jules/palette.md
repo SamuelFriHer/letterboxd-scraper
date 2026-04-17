@@ -14,3 +14,8 @@
 
 **Learning:** Hardcoded default values are good, but dynamic contextual defaults (like the current year or decade based on the system date) are even better. They anticipate the user's most likely intent at the exact moment of execution, further reducing friction and making the CLI feel intelligent and responsive.
 **Action:** When a "happy path" involves time-sensitive or context-dependent data, compute the default dynamically rather than using a static placeholder, and clearly display it in the prompt (e.g., `[2024]`).
+
+## 2024-05-18 - Auto-formatting CLI Input for Better UX
+
+**Learning:** Forcing users to enter data in strict formats (like a director's URL slug: `paul-thomas-anderson`) causes unnecessary friction and frequent errors.
+**Action:** Always accept human-readable input formats (like "Paul Thomas Anderson") and implement auto-formatting/slugification behind the scenes to handle the necessary backend transformations automatically.
