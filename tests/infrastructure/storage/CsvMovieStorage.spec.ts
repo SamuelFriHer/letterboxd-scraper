@@ -133,4 +133,29 @@ describe('CsvMovieStorage', () => {
       })
     );
   });
+
+  it('should correctly sanitize fields with leading whitespaces to prevent formula injection', async () => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const movies = [
+      {
+        title: '   =cmd|/c calc.exe!A0',
+        year: ' 2000',
+        directors: '\t@SUM(1,1)',
+        metascore: 90,
+        imdbLink: '  +A1',
+      },
+    ];
+
+    await storage.save(movies, 'popular');
+
+    expect(mockWriteRecords).toHaveBeenCalledWith([
+      {
+        title: "'   =cmd|/c calc.exe!A0",
+        year: ' 2000',
+        directors: "'\t@SUM(1,1)",
+        metascore: 90,
+        imdbLink: "'  +A1",
+      },
+    ]);
+  });
 });
