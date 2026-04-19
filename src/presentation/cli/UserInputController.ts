@@ -41,18 +41,13 @@ export class UserInputController {
     let directorSlug: string | undefined = undefined;
 
     if (option === 'director') {
-      const rawDirector = readlineSync.question(
-        'Introduce el nombre del director (ej. Paul Thomas Anderson): ',
+      directorSlug = readlineSync.question(
+        'Introduce el identificador del director (el final de su URL en Letterboxd, ej. paul-thomas-anderson): ',
         {
-          limit: /^[a-zA-Z0-9\s-]+$/,
-          limitMessage: '⚠️ El nombre contiene caracteres no válidos.',
+          limit: /^[a-z0-9-]+$/,
+          limitMessage: '⚠️ Usa minúsculas, números y guiones.',
         }
       );
-      directorSlug = rawDirector
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
     } else if (option === 'year') {
       const currentYear = new Date().getFullYear().toString();
       yearOrDecade = readlineSync.question(
