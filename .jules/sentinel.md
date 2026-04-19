@@ -27,3 +27,9 @@
 **Vulnerability:** While `title` and `directors` were sanitized, `year` and `imdbLink` scraped from external sources were appended directly to the output CSV. An attacker could construct an external entry with these fields containing malicious formulas (starting with `=`, `+`, etc.).
 **Learning:** All fields written to structured, exportable formats like CSV must be systematically validated, as any unsanitized externally sourced data point can execute locally when the output is opened.
 **Prevention:** Extend the internal `sanitizeCsvField()` method usage to explicitly cover all output columns originating from dynamically retrieved payloads.
+
+## 2024-05-19 - Fix CSV Formula Injection Bypass via Leading Whitespace
+
+**Vulnerability:** The previous CSV formula injection mitigation only checked the very first character of a field. If an attacker prefixed their malicious payload with spaces or tabs (e.g., `   =cmd|/c calc.exe!A0`), the protection was bypassed, and spreadsheet software (like Excel) would ignore the leading whitespaces and still execute the formula upon opening.
+**Learning:** Whitespace padding is a common evasion technique for CSV injection. Spreadsheet applications often trim or ignore leading whitespace before evaluating whether a cell content is a macro/formula. Sanitization regexes must account for arbitrary leading whitespaces.
+**Prevention:** Updated the CSV sanitization regex from `/^[=+\-@\t\r]/` to `/^[\s]*[=+\-@\t\r]/` to ensure fields that start with formula triggers, even after leading spaces, are correctly neutralized by prepending a single quote.

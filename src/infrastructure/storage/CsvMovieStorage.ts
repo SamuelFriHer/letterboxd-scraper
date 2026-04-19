@@ -49,8 +49,8 @@ export class CsvMovieStorage implements MovieStorage {
   private sanitizeCsvField(field: string): string {
     if (!field) return field;
     // Prevent CSV Formula Injection by prepending a single quote
-    // if the field starts with =, +, -, @, \t, or \r
-    if (/^[=+\-@\t\r]/.test(field)) {
+    // if the field starts with =, +, -, @, \t, or \r, even with leading spaces
+    if (/^[\s]*[=+\-@\t\r]/.test(field)) {
       return `'${field}`;
     }
     return field;
