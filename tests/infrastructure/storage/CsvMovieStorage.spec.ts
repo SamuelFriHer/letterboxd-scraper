@@ -50,6 +50,14 @@ describe('CsvMovieStorage', () => {
     );
   });
 
+  it('should abort save if input movies array is empty', async () => {
+    await storage.save([], 'popular');
+    expect(createObjectCsvWriter).not.toHaveBeenCalled();
+    expect(console.log).toHaveBeenCalledWith(
+      expect.stringContaining('Ninguna película tiene Metascore > 80')
+    );
+  });
+
   it('should create output directory if it does not exist', async () => {
     (fs.existsSync as jest.Mock).mockReturnValue(false);
     const movies = [
