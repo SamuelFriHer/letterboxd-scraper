@@ -3,6 +3,10 @@ import { LetterboxdCatalogProvider } from '../../../src/infrastructure/scraping/
 import { BrowserCoordinator } from '../../../src/infrastructure/browser/BrowserCoordinator';
 import { LoggerService } from '../../../src/domain/ports/LoggerService';
 
+interface GlobalWithDocument {
+  document?: unknown;
+}
+
 describe('LetterboxdCatalogProvider', () => {
   let provider: LetterboxdCatalogProvider;
   let mockBrowserCoordinator: jest.Mocked<BrowserCoordinator>;
@@ -100,6 +104,76 @@ describe('LetterboxdCatalogProvider', () => {
         '❌ Error: Timeout buscando películas.'
       );
     });
+
+    it('should extract movies from DOM elements using extractMoviesFromPage', async () => {
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce([]);
+
+      await provider.exploreCatalogPage(
+        'https://letterboxd.com/films/popular/'
+      );
+
+      const evalFn = (mockPage.evaluate as jest.Mock).mock.calls[0]?.[0];
+      expect(evalFn).toBeDefined();
+
+      const globalWithDoc = global as unknown as GlobalWithDocument;
+      const originalDocument = globalWithDoc.document;
+
+      try {
+        const mockMovieComponent1 = {
+          getAttribute: jest.fn().mockImplementation((attr: string) => {
+            if (attr === 'data-item-name') return 'The Matrix';
+            if (attr === 'data-item-link') return '/film/the-matrix';
+            return null;
+          }),
+        };
+        const mockMovieElement1 = {
+          querySelector: jest.fn().mockReturnValue(mockMovieComponent1),
+        };
+
+        const mockMovieComponent2 = {
+          getAttribute: jest.fn().mockImplementation((attr: string) => {
+            if (attr === 'data-item-name') return '';
+            if (attr === 'data-item-link') return '/film/fight-club';
+            return null;
+          }),
+        };
+        const mockMovieElement2 = {
+          querySelector: jest.fn().mockReturnValue(mockMovieComponent2),
+        };
+
+        const mockMovieElement3 = {
+          querySelector: jest.fn().mockReturnValue(null),
+        };
+
+        const mockQuerySelectorAll = jest
+          .fn()
+          .mockReturnValue([
+            mockMovieElement1,
+            mockMovieElement2,
+            mockMovieElement3,
+          ]);
+
+        globalWithDoc.document = {
+          querySelectorAll: mockQuerySelectorAll,
+        };
+
+        const result = evalFn();
+        expect(result).toEqual([
+          {
+            title: 'The Matrix',
+            link: 'https://letterboxd.com/film/the-matrix',
+          },
+        ]);
+        expect(mockQuerySelectorAll).toHaveBeenCalledWith(
+          '.posteritem, .tooltip.griditem'
+        );
+        expect(mockMovieElement1.querySelector).toHaveBeenCalledWith(
+          '.react-component'
+        );
+      } finally {
+        globalWithDoc.document = originalDocument;
+      }
+    });
   });
 
   describe('getMovieDetails', () => {
@@ -172,6 +246,174 @@ describe('LetterboxdCatalogProvider', () => {
         'https://letterboxd.com/film/the-matrix'
       );
       expect(result.imdbLink).toBe('https://www.imdb.com/title/tt0133093/');
+    });
+
+    it('should fallback to default values in extractBasicMovieDetails when DOM elements are null', async () => {
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(
+        'https://www.imdb.com/title/tt0133093/'
+      );
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce({
+        title: 'Dummy',
+        year: '2000',
+        directors: '',
+      });
+
+      await provider.getMovieDetails('https://letterboxd.com/film/the-matrix');
+
+      const evalFn = (mockPage.evaluate as jest.Mock).mock.calls[1]?.[0];
+      expect(evalFn).toBeDefined();
+
+      const globalWithDoc = global as unknown as GlobalWithDocument;
+      const originalDocument = globalWithDoc.document;
+      const mockQuerySelector = jest.fn().mockReturnValue(null);
+      const mockQuerySelectorAll = jest.fn().mockReturnValue([]);
+
+      globalWithDoc.document = {
+        querySelector: mockQuerySelector,
+        querySelectorAll: mockQuerySelectorAll,
+      };
+
+      try {
+        const result = evalFn();
+        expect(result).toEqual({
+          title: 'Desconocido',
+          year: 'Desconocido',
+          directors: '',
+        });
+        expect(mockQuerySelector).toHaveBeenCalledWith(
+          'h1.headline-1.primaryname span.name'
+        );
+        expect(mockQuerySelector).toHaveBeenCalledWith('span.releasedate a');
+        expect(mockQuerySelectorAll).toHaveBeenCalledWith(
+          '.credits a.contributor[href^="/director/"]'
+        );
+      } finally {
+        globalWithDoc.document = originalDocument;
+      }
+    });
+
+    it('should extract movie details correctly in extractBasicMovieDetails when DOM elements exist', async () => {
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(
+        'https://www.imdb.com/title/tt0133093/'
+      );
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce({
+        title: 'Dummy',
+        year: '2000',
+        directors: '',
+      });
+
+      await provider.getMovieDetails('https://letterboxd.com/film/the-matrix');
+
+      const evalFn = (mockPage.evaluate as jest.Mock).mock.calls[1]?.[0];
+      expect(evalFn).toBeDefined();
+
+      const globalWithDoc = global as unknown as GlobalWithDocument;
+      const originalDocument = globalWithDoc.document;
+      const mockTitleElement = { textContent: '  The Matrix   ' };
+      const mockYearElement = { textContent: ' \n 1999 \t' };
+      const mockDirector1 = { textContent: '  Lana Wachowski  ' };
+      const mockDirector2 = { textContent: '  Lilly Wachowski  ' };
+
+      const mockQuerySelector = jest
+        .fn()
+        .mockImplementation((selector: string) => {
+          if (selector === 'h1.headline-1.primaryname span.name') {
+            return mockTitleElement;
+          }
+          if (selector === 'span.releasedate a') {
+            return mockYearElement;
+          }
+          return null;
+        });
+
+      const mockQuerySelectorAll = jest
+        .fn()
+        .mockImplementation((selector: string) => {
+          if (selector === '.credits a.contributor[href^="/director/"]') {
+            return [mockDirector1, mockDirector2];
+          }
+          return [];
+        });
+
+      globalWithDoc.document = {
+        querySelector: mockQuerySelector,
+        querySelectorAll: mockQuerySelectorAll,
+      };
+
+      try {
+        const result = evalFn();
+        expect(result).toEqual({
+          title: 'The Matrix',
+          year: '1999',
+          directors: 'Lana Wachowski, Lilly Wachowski',
+        });
+      } finally {
+        globalWithDoc.document = originalDocument;
+      }
+    });
+
+    it('should extract IMDb link using querySelector or matching all links', async () => {
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(
+        'https://www.imdb.com/title/tt0133093/'
+      );
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce({
+        title: 'Dummy',
+        year: '2000',
+        directors: '',
+      });
+
+      await provider.getMovieDetails('https://letterboxd.com/film/the-matrix');
+
+      const extractImdbLinkFn = (mockPage.evaluate as jest.Mock).mock
+        .calls[0]?.[0];
+      expect(extractImdbLinkFn).toBeDefined();
+
+      const globalWithDoc = global as unknown as GlobalWithDocument;
+      const originalDocument = globalWithDoc.document;
+
+      try {
+        const mockEl = {
+          getAttribute: jest
+            .fn()
+            .mockReturnValue('https://www.imdb.com/title/tt0133093/'),
+        };
+        const mockQuerySelector = jest.fn().mockReturnValue(mockEl);
+        const mockQuerySelectorAll = jest.fn().mockReturnValue([]);
+
+        globalWithDoc.document = {
+          querySelector: mockQuerySelector,
+          querySelectorAll: mockQuerySelectorAll,
+        };
+
+        let result = extractImdbLinkFn();
+        expect(result).toBe('https://www.imdb.com/title/tt0133093/');
+        expect(mockQuerySelector).toHaveBeenCalledWith(
+          "a[href*='imdb.com/title']"
+        );
+
+        const mockLink1 = { href: 'https://letterboxd.com' };
+        const mockLink2 = { href: 'https://www.imdb.com/title/tt0133093/' };
+        mockQuerySelector.mockReturnValue(null);
+        mockQuerySelectorAll.mockReturnValue([mockLink1, mockLink2]);
+
+        result = extractImdbLinkFn();
+        expect(result).toBe('https://www.imdb.com/title/tt0133093/');
+        expect(mockQuerySelectorAll).toHaveBeenCalledWith('a');
+
+        mockQuerySelectorAll.mockReturnValue([mockLink1]);
+        result = extractImdbLinkFn();
+        expect(result).toBe('');
+      } finally {
+        globalWithDoc.document = originalDocument;
+      }
+    });
+
+    it('should return empty string if URL parsing fails in validateImdbUrl', () => {
+      const providerAny = provider as unknown as {
+        validateImdbUrl: (url: string) => string;
+      };
+      const validUrl = providerAny.validateImdbUrl('not-a-valid-url');
+      expect(validUrl).toBe('');
     });
   });
 });
