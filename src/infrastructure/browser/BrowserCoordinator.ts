@@ -2,6 +2,7 @@ import { Browser, Page, HTTPRequest } from 'puppeteer';
 import puppeteerExtra from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { AppConfiguration } from '../../config/AppConfiguration';
+import { LoggerService } from '../../domain/ports/LoggerService';
 
 puppeteerExtra.use(StealthPlugin());
 
@@ -11,6 +12,8 @@ puppeteerExtra.use(StealthPlugin());
 export class BrowserCoordinator {
   private browser: Browser | null = null;
   private config = AppConfiguration.getInstance();
+
+  constructor(private readonly logger?: LoggerService) {}
 
   /**
    * Initializes and launches the underlying browser process.
@@ -100,8 +103,14 @@ export class BrowserCoordinator {
       const pages = await this.browser.pages();
       const lastPage = pages[pages.length - 1];
       if (lastPage) await lastPage.close();
-    } catch (_e) {
-      // Keep going on cleanup errors
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.stack || error.message : String(error);
+      if (this.logger) {
+        this.logger.error(`Error during page cleanup: ${message}`);
+      } else {
+        console.error(`Error during page cleanup: ${message}`);
+      }
     }
   }
 

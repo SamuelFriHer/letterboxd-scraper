@@ -17,7 +17,7 @@ async function bootstrap() {
   const inputController = new UserInputController();
   const config = inputController.promptConfiguration();
 
-  const browserCoordinator = new BrowserCoordinator();
+  const browserCoordinator = new BrowserCoordinator(logger);
 
   const catalogProvider = new LetterboxdCatalogProvider(
     browserCoordinator,

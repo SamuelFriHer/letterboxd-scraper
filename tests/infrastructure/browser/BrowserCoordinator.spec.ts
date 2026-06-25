@@ -64,11 +64,106 @@ describe('BrowserCoordinator', () => {
     );
   });
 
+  it('should return early from cleanupPage if browser is not initialized', async () => {
+    const coordinatorWithoutBrowser = new BrowserCoordinator();
+    await expect(
+      coordinatorWithoutBrowser.cleanupPage()
+    ).resolves.not.toThrow();
+  });
+
   it('should cleanup last page ignoring errors', async () => {
     await coordinator.startBrowser();
     await coordinator.cleanupPage();
     expect(mockBrowser.pages).toHaveBeenCalledTimes(1);
     expect(mockPage.close).toHaveBeenCalledTimes(1);
+  });
+
+  it('should log error using logger when browser.pages throws an error', async () => {
+    const mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      header: jest.fn(),
+      logBatchResults: jest.fn(),
+      createTaskLogger: jest.fn(),
+    };
+    const coordinatorWithLogger = new BrowserCoordinator(mockLogger);
+    await coordinatorWithLogger.startBrowser();
+
+    const expectedError = new Error('Failed to retrieve pages');
+    mockBrowser.pages = jest.fn().mockRejectedValue(expectedError);
+
+    await coordinatorWithLogger.cleanupPage();
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Error during page cleanup: Error: Failed to retrieve pages'
+      )
+    );
+  });
+
+  it('should log error to console.error when browser.pages throws an error and no logger is provided', async () => {
+    await coordinator.startBrowser();
+
+    const expectedError = new Error('Failed to retrieve pages');
+    mockBrowser.pages = jest.fn().mockRejectedValue(expectedError);
+
+    const consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    await coordinator.cleanupPage();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Error during page cleanup: Error: Failed to retrieve pages'
+      )
+    );
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should log error using logger when lastPage.close throws an error', async () => {
+    const mockLogger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      header: jest.fn(),
+      logBatchResults: jest.fn(),
+      createTaskLogger: jest.fn(),
+    };
+    const coordinatorWithLogger = new BrowserCoordinator(mockLogger);
+    await coordinatorWithLogger.startBrowser();
+
+    const expectedError = new Error('Failed to close page');
+    mockPage.close = jest.fn().mockRejectedValue(expectedError);
+
+    await coordinatorWithLogger.cleanupPage();
+
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Error during page cleanup: Error: Failed to close page'
+      )
+    );
+  });
+
+  it('should log error to console.error when lastPage.close throws an error and no logger is provided', async () => {
+    await coordinator.startBrowser();
+
+    const expectedError = new Error('Failed to close page');
+    mockPage.close = jest.fn().mockRejectedValue(expectedError);
+
+    const consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    await coordinator.cleanupPage();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'Error during page cleanup: Error: Failed to close page'
+      )
+    );
+    consoleErrorSpy.mockRestore();
   });
 
   it('should chunk an array correctly', () => {
