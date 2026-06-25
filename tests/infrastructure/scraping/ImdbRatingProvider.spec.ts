@@ -3,6 +3,13 @@ import { ImdbRatingProvider } from '../../../src/infrastructure/scraping/ImdbRat
 import { BrowserCoordinator } from '../../../src/infrastructure/browser/BrowserCoordinator';
 import { TaskLoggerService } from '../../../src/domain/ports/LoggerService';
 
+interface ImdbRatingProviderPrivate {
+  activeImdbRequests: number;
+  imdbQueue: (() => void)[];
+  acquireImdbPermit(): Promise<void>;
+  releaseImdbPermit(): void;
+}
+
 describe('ImdbRatingProvider', () => {
   let provider: ImdbRatingProvider;
   let mockBrowserCoordinator: jest.Mocked<BrowserCoordinator>;
@@ -122,6 +129,65 @@ describe('ImdbRatingProvider', () => {
       expect(mockTaskLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('No se pudo cargar IMDb después de 2 intentos.')
       );
+    });
+  });
+
+  describe('concurrency permit management', () => {
+    it('should acquire permits up to the limit immediately', async () => {
+      const providerUnderTest =
+        provider as unknown as ImdbRatingProviderPrivate;
+
+      expect(providerUnderTest.activeImdbRequests).toBe(0);
+
+      await providerUnderTest.acquireImdbPermit();
+      expect(providerUnderTest.activeImdbRequests).toBe(1);
+
+      await providerUnderTest.acquireImdbPermit();
+      expect(providerUnderTest.activeImdbRequests).toBe(2);
+    });
+
+    it('should queue subsequent permit requests when limit is exceeded', async () => {
+      const providerUnderTest =
+        provider as unknown as ImdbRatingProviderPrivate;
+
+      // Acquire initial 2 permits to reach the concurrency limit
+      await providerUnderTest.acquireImdbPermit();
+      await providerUnderTest.acquireImdbPermit();
+      expect(providerUnderTest.activeImdbRequests).toBe(2);
+      expect(providerUnderTest.imdbQueue.length).toBe(0);
+
+      // Request 3rd permit - should be queued and not resolved immediately
+      let thirdPermitResolved = false;
+      const thirdPermitPromise = providerUnderTest
+        .acquireImdbPermit()
+        .then(() => {
+          thirdPermitResolved = true;
+        });
+
+      // Flush microtasks
+      await Promise.resolve();
+      expect(thirdPermitResolved).toBe(false);
+      expect(providerUnderTest.imdbQueue.length).toBe(1);
+
+      // Release one permit, which should trigger the third one to resolve
+      providerUnderTest.releaseImdbPermit();
+
+      await thirdPermitPromise;
+      expect(thirdPermitResolved).toBe(true);
+      expect(providerUnderTest.activeImdbRequests).toBe(2);
+      expect(providerUnderTest.imdbQueue.length).toBe(0);
+    });
+
+    it('should correctly decrement active requests on release when queue is empty', async () => {
+      const providerUnderTest =
+        provider as unknown as ImdbRatingProviderPrivate;
+
+      await providerUnderTest.acquireImdbPermit();
+      expect(providerUnderTest.activeImdbRequests).toBe(1);
+
+      providerUnderTest.releaseImdbPermit();
+      expect(providerUnderTest.activeImdbRequests).toBe(0);
+      expect(providerUnderTest.imdbQueue.length).toBe(0);
     });
   });
 });
