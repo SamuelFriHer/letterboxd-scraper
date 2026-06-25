@@ -6,8 +6,12 @@ import { TaskLoggerService } from '../../../src/domain/ports/LoggerService';
 interface ImdbRatingProviderPrivate {
   activeImdbRequests: number;
   imdbQueue: (() => void)[];
+  isHandlingCookies: boolean;
+  imdbCookiesHandled: boolean;
+  imdbCookiesAttempted: boolean;
   acquireImdbPermit(): Promise<void>;
   releaseImdbPermit(): void;
+  ensureImdbCookies(): Promise<void>;
 }
 
 describe('ImdbRatingProvider', () => {
@@ -188,6 +192,51 @@ describe('ImdbRatingProvider', () => {
       providerUnderTest.releaseImdbPermit();
       expect(providerUnderTest.activeImdbRequests).toBe(0);
       expect(providerUnderTest.imdbQueue.length).toBe(0);
+    });
+  });
+
+  describe('ensureImdbCookies concurrency and consent', () => {
+    it('should wait for concurrent cookie handling to complete and not trigger a second handle', async () => {
+      const providerUnderTest =
+        provider as unknown as ImdbRatingProviderPrivate;
+
+      let resolveFirstNewPage!: (value: unknown) => void;
+      const firstNewPagePromise = new Promise<unknown>((resolve) => {
+        resolveFirstNewPage = resolve;
+      });
+
+      (mockBrowser.newPage as jest.Mock)
+        .mockImplementationOnce(() => firstNewPagePromise)
+        .mockResolvedValue(mockPage);
+
+      const firstCall = providerUnderTest.ensureImdbCookies();
+
+      expect(providerUnderTest.isHandlingCookies).toBe(true);
+
+      const secondCall = providerUnderTest.ensureImdbCookies();
+
+      resolveFirstNewPage(mockPage);
+
+      await Promise.all([firstCall, secondCall]);
+
+      expect(mockBrowser.newPage).toHaveBeenCalledTimes(1);
+      expect(providerUnderTest.isHandlingCookies).toBe(false);
+      expect(providerUnderTest.imdbCookiesHandled).toBe(true);
+    });
+
+    it('should click consent button if present and wait', async () => {
+      const providerUnderTest =
+        provider as unknown as ImdbRatingProviderPrivate;
+
+      const mockClick = jest.fn().mockResolvedValue(undefined);
+      (mockPage.$ as jest.Mock).mockResolvedValueOnce({
+        click: mockClick,
+      });
+
+      await providerUnderTest.ensureImdbCookies();
+
+      expect(mockPage.$).toHaveBeenCalledWith('[data-testid="accept-button"]');
+      expect(mockClick).toHaveBeenCalled();
     });
   });
 });
