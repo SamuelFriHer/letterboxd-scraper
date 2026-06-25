@@ -24,14 +24,16 @@ export class LetterboxdCatalogProvider implements CatalogProvider {
     this.browserCoordinator.validateSafeUrl(url, 'letterboxd.com');
     const page = await this.browserCoordinator.openOptimizedPage();
 
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
-    await this.handleCookieConsent(page);
-    await this.waitForMovies(page);
+    try {
+      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      await this.handleCookieConsent(page);
+      await this.waitForMovies(page);
 
-    const movies = await this.extractMoviesFromPage(page);
-    await page.close();
-
-    return movies;
+      const movies = await this.extractMoviesFromPage(page);
+      return movies;
+    } finally {
+      await page.close();
+    }
   }
 
   /**
@@ -49,11 +51,9 @@ export class LetterboxdCatalogProvider implements CatalogProvider {
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       const imdbLink = await this.extractImdbLink(page);
       const details = await this.extractBasicMovieDetails(page);
-      await page.close();
       return { ...details, imdbLink };
-    } catch (e) {
+    } finally {
       await page.close();
-      throw e;
     }
   }
 

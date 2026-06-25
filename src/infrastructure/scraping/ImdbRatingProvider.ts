@@ -10,6 +10,7 @@ import { ImdbExtractor } from './ImdbExtractor';
 export class ImdbRatingProvider implements RatingProvider {
   private isHandlingCookies = false;
   private imdbCookiesHandled = false;
+  private imdbCookiesAttempted = false;
   private readonly imdbConcurrencyLimit = 2;
   private activeImdbRequests = 0;
   private imdbQueue: (() => void)[] = [];
@@ -122,15 +123,16 @@ export class ImdbRatingProvider implements RatingProvider {
   }
 
   private async ensureImdbCookies(): Promise<void> {
-    if (this.imdbCookiesHandled) return;
+    if (this.imdbCookiesHandled || this.imdbCookiesAttempted) return;
     while (this.isHandlingCookies) {
       await new Promise((resolve) => setTimeout(resolve, 200));
     }
-    if (this.imdbCookiesHandled) return;
+    if (this.imdbCookiesHandled || this.imdbCookiesAttempted) return;
 
     this.isHandlingCookies = true;
+    let page: Page | null = null;
     try {
-      const page = await this.browserCoordinator.getBrowser().newPage();
+      page = await this.browserCoordinator.getBrowser().newPage();
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
       await page.goto('https://www.imdb.com/', {
         waitUntil: 'domcontentloaded',
@@ -141,11 +143,16 @@ export class ImdbRatingProvider implements RatingProvider {
         await consentBtn.click();
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
-      await page.close();
       this.imdbCookiesHandled = true;
-    } catch (_e) {
-      // Ignorar
+    } catch (error) {
+      if (error instanceof Error) {
+        // Suppress cookie consent failure so the scraping can still proceed, but avoid page leak.
+      }
     } finally {
+      this.imdbCookiesAttempted = true;
+      if (page) {
+        await page.close();
+      }
       this.isHandlingCookies = false;
     }
   }
