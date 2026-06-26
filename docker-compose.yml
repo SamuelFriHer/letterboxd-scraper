@@ -9,9 +9,9 @@ services:
     # Soluciona permisos de archivos
     user: '${UID}:${GID}'
 
-    # Necesario para el sandbox de Chromium
-    cap_add:
-      - SYS_ADMIN
+    # Required for Chromium sandbox without granting SYS_ADMIN privileges
+    security_opt:
+      - seccomp:unconfined
     shm_size: 1gb
 
     # Volúmenes:
