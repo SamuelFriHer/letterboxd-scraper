@@ -1,7 +1,7 @@
-# Imagen de Node
+# Node image
 FROM node:lts
 
-# Instalar Chromium y dependencias para el sandbox
+# Install Chromium and dependencies for the sandbox
 RUN apt-get update && apt-get install -y \
     chromium \
     chromium-sandbox \
@@ -9,16 +9,16 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
 && rm -rf /var/lib/apt/lists/*
 
-# Configurar el sandbox de Chromium con SUID
+# Configure the Chromium sandbox with SUID
 ENV CHROME_DEVEL_SANDBOX=/usr/lib/chromium/chrome-sandbox
 RUN if [ -f "$CHROME_DEVEL_SANDBOX" ]; then \
         chown root:root "$CHROME_DEVEL_SANDBOX" && \
         chmod 4755 "$CHROME_DEVEL_SANDBOX"; \
     fi
 
-# Establecer el directorio de trabajo y permisos para el usuario node
+# Set working directory and permissions for the node user
 WORKDIR /app
 RUN chown -R node:node /app
 
-# Ejecutar como usuario no raíz
+# Run as non-root user
 USER node

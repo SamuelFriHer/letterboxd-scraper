@@ -1,12 +1,12 @@
 services:
   scraper:
-    # Dockerfile está en este directorio
+    # Dockerfile is in this directory
     build: .
 
-    # El directorio de trabajo DENTRO del contenedor
+    # The working directory INSIDE the container
     working_dir: /app
 
-    # Soluciona permisos de archivos
+    # Fix file permissions
     user: '${UID}:${GID}'
 
     # Required for Chromium sandbox without granting SYS_ADMIN privileges
@@ -14,10 +14,10 @@ services:
       - seccomp:unconfined
     shm_size: 1gb
 
-    # Volúmenes:
+    # Volumes:
     volumes:
-      # Monta el código local en /app
+      # Mount local code to /app
       - .:/app
 
-    # El comando que se ejecutará
+    # The command to be executed
     command: sh -c "npm install && npm start"
