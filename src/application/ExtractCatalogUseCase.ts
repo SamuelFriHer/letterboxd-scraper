@@ -3,8 +3,12 @@ import { ScrapingConfiguration } from '../domain/models/ScrapingConfiguration';
 import { CatalogProvider } from '../domain/ports/CatalogProvider';
 import { RatingProvider } from '../domain/ports/RatingProvider';
 import { MovieStorage } from '../domain/ports/MovieStorage';
-import { LoggerService } from '../domain/ports/LoggerService';
+import {
+  LoggerService,
+  TaskLoggerService,
+} from '../domain/ports/LoggerService';
 import { BrowserCoordinator } from '../infrastructure/browser/BrowserCoordinator';
+import { AppConfiguration } from '../config/AppConfiguration';
 
 /**
  * Application use case orchestrating the complete catalog scraping workflow.
@@ -95,19 +99,25 @@ export class ExtractCatalogUseCase {
     }
   }
 
-  private async scrapeSingleMovie(url: string) {
+  private async scrapeSingleMovie(
+    url: string
+  ): Promise<{ movie: Movie; logger: TaskLoggerService }> {
     const slug = url.split('/film/')[1]?.replace('/', '') || 'desconocido';
     const taskLogger = this.logger.createTaskLogger(slug);
-    const MAX_RETRIES = 3;
+    const config = AppConfiguration.getInstance();
+    const maxRetries = config.scraping.catalog.maxRetries;
+    const retryDelay = config.scraping.catalog.retryDelay;
 
-    for (let retries = 0; retries <= MAX_RETRIES; retries++) {
+    for (let retries = 0; retries <= maxRetries; retries++) {
       try {
         return await this.tryMovieExtraction(url, slug, taskLogger);
-      } catch (_e) {
+      } catch (_error) {
         await this.browserCoordinator.cleanupPage();
-        if (retries < MAX_RETRIES) {
-          taskLogger.warn(`⚠️ Retry ${retries}/${MAX_RETRIES} for ${slug}...`);
-          await new Promise((r) => setTimeout(r, retries * 5000));
+        if (retries < maxRetries) {
+          taskLogger.warn(`⚠️ Retry ${retries}/${maxRetries} for ${slug}...`);
+          await new Promise((resolve) =>
+            setTimeout(resolve, retries * retryDelay)
+          );
         }
       }
     }
@@ -119,8 +129,8 @@ export class ExtractCatalogUseCase {
   private async tryMovieExtraction(
     url: string,
     slug: string,
-    logger: import('../domain/ports/LoggerService').TaskLoggerService
-  ) {
+    logger: TaskLoggerService
+  ): Promise<{ movie: Movie; logger: TaskLoggerService }> {
     const detailData = await this.catalogProvider.getMovieDetails(url);
     let metascore = -1;
 
@@ -144,8 +154,8 @@ export class ExtractCatalogUseCase {
 
   private createFallbackMovie(
     slug: string,
-    logger: import('../domain/ports/LoggerService').TaskLoggerService
-  ) {
+    logger: TaskLoggerService
+  ): { movie: Movie; logger: TaskLoggerService } {
     return {
       movie: {
         title: slug.replace(/-/g, ' '),

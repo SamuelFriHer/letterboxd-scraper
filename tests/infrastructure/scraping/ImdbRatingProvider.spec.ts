@@ -2,6 +2,7 @@ import { Page, Browser } from 'puppeteer';
 import { ImdbRatingProvider } from '../../../src/infrastructure/scraping/ImdbRatingProvider';
 import { BrowserCoordinator } from '../../../src/infrastructure/browser/BrowserCoordinator';
 import { TaskLoggerService } from '../../../src/domain/ports/LoggerService';
+import { AppConfiguration } from '../../../src/config/AppConfiguration';
 
 interface ImdbRatingProviderPrivate {
   activeImdbRequests: number;
@@ -134,6 +135,36 @@ describe('ImdbRatingProvider', () => {
       expect(mockTaskLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('No se pudo cargar IMDb después de 2 intentos.')
       );
+    });
+
+    it('should respect maxRetries configuration from AppConfiguration', async () => {
+      const mockConfig = {
+        scraping: {
+          imdb: {
+            maxRetries: 1,
+            retryDelay: 1000,
+          },
+        },
+      };
+      const getInstanceSpy = jest
+        .spyOn(AppConfiguration, 'getInstance')
+        .mockReturnValue(mockConfig as unknown as AppConfiguration);
+
+      (mockPage.goto as jest.Mock).mockRejectedValue(
+        new Error('Network error')
+      );
+
+      const result = await provider.getMetascore(
+        'https://www.imdb.com/title/tt1234567/',
+        mockTaskLogger
+      );
+
+      expect(result).toBe(-1);
+      expect(mockTaskLogger.error).toHaveBeenCalledWith(
+        expect.stringContaining('No se pudo cargar IMDb después de 1 intentos.')
+      );
+
+      getInstanceSpy.mockRestore();
     });
   });
 

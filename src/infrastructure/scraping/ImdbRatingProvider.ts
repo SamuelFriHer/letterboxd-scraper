@@ -3,6 +3,7 @@ import { RatingProvider } from '../../domain/ports/RatingProvider';
 import { TaskLoggerService } from '../../domain/ports/LoggerService';
 import { BrowserCoordinator } from '../browser/BrowserCoordinator';
 import { ImdbExtractor } from './ImdbExtractor';
+import { AppConfiguration } from '../../config/AppConfiguration';
 
 /**
  * Concrete provider that navigates to IMDb pages to reliably extract Metascores.
@@ -29,17 +30,18 @@ export class ImdbRatingProvider implements RatingProvider {
     taskLogger: TaskLoggerService
   ): Promise<number> {
     taskLogger.log(`🔍 Buscando Metascore en IMDb...`);
-    const MAX_RETRIES = 2;
+    const config = AppConfiguration.getInstance();
+    const maxRetries = config.scraping.imdb.maxRetries;
 
-    for (let r = 0; r <= MAX_RETRIES; r++) {
+    for (let r = 0; r <= maxRetries; r++) {
       try {
         return await this.tryFetchMetascore(imdbUrl, taskLogger);
-      } catch (_e) {
-        if (r < MAX_RETRIES) {
-          await this.handleRetry(r + 1, MAX_RETRIES, taskLogger);
+      } catch (_error) {
+        if (r < maxRetries) {
+          await this.handleRetry(r + 1, maxRetries, taskLogger);
         } else {
           taskLogger.error(
-            `❌ No se pudo cargar IMDb después de ${MAX_RETRIES} intentos.`
+            `❌ No se pudo cargar IMDb después de ${maxRetries} intentos.`
           );
         }
       }
@@ -75,7 +77,8 @@ export class ImdbRatingProvider implements RatingProvider {
     maxRetries: number,
     logger: TaskLoggerService
   ): Promise<void> {
-    const waitTime = retries * 3000;
+    const config = AppConfiguration.getInstance();
+    const waitTime = retries * config.scraping.imdb.retryDelay;
     logger.warn(
       `⚠️ Error al cargar IMDb. Reintento ${retries}/${maxRetries}...`
     );

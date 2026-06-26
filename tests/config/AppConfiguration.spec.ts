@@ -30,6 +30,41 @@ describe('AppConfiguration', () => {
     });
 
     expect(config.paths.output).toBe(path.resolve(__dirname, '../../output'));
+
+    expect(config.scraping.catalog).toEqual({
+      maxRetries: 3,
+      retryDelay: 5000,
+    });
+
+    expect(config.scraping.imdb).toEqual({
+      maxRetries: 2,
+      retryDelay: 3000,
+    });
+  });
+
+  it('should respect the scraping environment variables', () => {
+    process.env.SCRAPING_CATALOG_MAX_RETRIES = '5';
+    process.env.SCRAPING_CATALOG_RETRY_DELAY = '10000';
+    process.env.SCRAPING_IMDB_MAX_RETRIES = '1';
+    process.env.SCRAPING_IMDB_RETRY_DELAY = '1500';
+
+    let configInstance: AppConfiguration | undefined;
+    jest.isolateModules(() => {
+      const { AppConfiguration: IsolateAppConfiguration } =
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('../../src/config/AppConfiguration') as typeof import('../../src/config/AppConfiguration');
+      configInstance = IsolateAppConfiguration.getInstance();
+    });
+
+    expect(configInstance).toBeDefined();
+    expect(configInstance?.scraping.catalog).toEqual({
+      maxRetries: 5,
+      retryDelay: 10000,
+    });
+    expect(configInstance?.scraping.imdb).toEqual({
+      maxRetries: 1,
+      retryDelay: 1500,
+    });
   });
 
   it('should respect the PUPPETEER_EXECUTABLE_PATH environment variable', () => {

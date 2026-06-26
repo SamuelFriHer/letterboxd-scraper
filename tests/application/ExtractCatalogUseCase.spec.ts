@@ -7,6 +7,7 @@ import {
   LoggerService,
   TaskLoggerService,
 } from '../../src/domain/ports/LoggerService';
+import { AppConfiguration } from '../../src/config/AppConfiguration';
 import { ScrapingConfiguration } from '../../src/domain/models/ScrapingConfiguration';
 
 describe('ExtractCatalogUseCase', () => {
@@ -210,6 +211,57 @@ describe('ExtractCatalogUseCase', () => {
         ],
         'popular',
         ''
+      );
+    });
+
+    it('should respect maxRetries configuration from AppConfiguration', async () => {
+      const mockConfig = {
+        scraping: {
+          catalog: {
+            maxRetries: 1,
+            retryDelay: 1000,
+          },
+        },
+      };
+      const getInstanceSpy = jest
+        .spyOn(AppConfiguration, 'getInstance')
+        .mockReturnValue(mockConfig as unknown as AppConfiguration);
+
+      const config: ScrapingConfiguration = {
+        option: 'director',
+        directorSlug: 'christopher-nolan',
+        yearOrDecade: '',
+        pages: 1,
+      };
+      mockCatalogProvider.exploreCatalogPage.mockResolvedValueOnce([
+        {
+          title: 'Buggy Movie',
+          link: 'https://letterboxd.com/film/buggy-movie/',
+        },
+      ]);
+
+      mockCatalogProvider.getMovieDetails.mockRejectedValue(
+        new Error('Persistent error')
+      );
+
+      jest
+        .spyOn(global, 'setTimeout')
+        .mockImplementation((cb: string | ((...args: unknown[]) => void)) => {
+          if (typeof cb === 'function') {
+            cb();
+          }
+          return 0 as unknown as ReturnType<typeof setTimeout>;
+        });
+
+      await useCase.execute(config);
+
+      jest.restoreAllMocks();
+      getInstanceSpy.mockRestore();
+
+      expect(mockCatalogProvider.getMovieDetails).toHaveBeenCalledTimes(2); // 1 initial + 1 retry
+      expect(mockBrowserCoordinator.cleanupPage).toHaveBeenCalledTimes(2);
+      expect(mockTaskLogger.error).toHaveBeenCalledWith(
+        '❌ Failed: buggy-movie'
       );
     });
   });

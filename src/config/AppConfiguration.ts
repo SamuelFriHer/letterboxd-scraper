@@ -17,6 +17,25 @@ export class AppConfiguration {
     output: path.resolve(__dirname, '../../output'),
   };
 
+  public readonly scraping = {
+    catalog: {
+      maxRetries: process.env.SCRAPING_CATALOG_MAX_RETRIES
+        ? parseInt(process.env.SCRAPING_CATALOG_MAX_RETRIES, 10)
+        : 3,
+      retryDelay: process.env.SCRAPING_CATALOG_RETRY_DELAY
+        ? parseInt(process.env.SCRAPING_CATALOG_RETRY_DELAY, 10)
+        : 5000,
+    },
+    imdb: {
+      maxRetries: process.env.SCRAPING_IMDB_MAX_RETRIES
+        ? parseInt(process.env.SCRAPING_IMDB_MAX_RETRIES, 10)
+        : 2,
+      retryDelay: process.env.SCRAPING_IMDB_RETRY_DELAY
+        ? parseInt(process.env.SCRAPING_IMDB_RETRY_DELAY, 10)
+        : 3000,
+    },
+  };
+
   private constructor() {}
 
   /**
