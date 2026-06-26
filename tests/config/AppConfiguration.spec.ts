@@ -29,16 +29,6 @@ describe('AppConfiguration', () => {
       args: ['--disable-dev-shm-usage'],
     });
 
-    expect(config.timeouts).toEqual({
-      selector: 10000,
-      pageLoad: 60000,
-      retryBase: 5000,
-    });
-
-    expect(config.retries).toEqual({
-      max: 3,
-    });
-
     expect(config.paths.output).toBe(path.resolve(__dirname, '../../output'));
   });
 

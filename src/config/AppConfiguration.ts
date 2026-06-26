@@ -13,16 +13,6 @@ export class AppConfiguration {
     args: ['--disable-dev-shm-usage'],
   };
 
-  public readonly timeouts = {
-    selector: 10000,
-    pageLoad: 60000,
-    retryBase: 5000,
-  };
-
-  public readonly retries = {
-    max: 3,
-  };
-
   public readonly paths = {
     output: path.resolve(__dirname, '../../output'),
   };
