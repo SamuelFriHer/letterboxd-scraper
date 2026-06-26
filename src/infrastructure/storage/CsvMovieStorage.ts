@@ -57,9 +57,10 @@ export class CsvMovieStorage implements MovieStorage {
   }
 
   private getOutputDir(option: string): string {
-    let dir = this.config.paths.output;
+    let dir: string = this.config.paths.output;
     if (option !== 'popular') {
-      dir = path.join(dir, option);
+      // Use path.basename to prevent directory traversal attacks
+      dir = path.join(dir, path.basename(option));
     }
     return dir;
   }

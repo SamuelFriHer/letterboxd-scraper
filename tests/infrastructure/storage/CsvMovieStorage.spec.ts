@@ -1,5 +1,7 @@
 import { CsvMovieStorage } from '../../../src/infrastructure/storage/CsvMovieStorage';
+import { Movie } from '../../../src/domain/models/Movie';
 import fs from 'fs';
+import path from 'path';
 import { createObjectCsvWriter } from 'csv-writer';
 
 jest.mock('fs');
@@ -165,5 +167,28 @@ describe('CsvMovieStorage', () => {
         imdbLink: "'  +A1",
       },
     ]);
+  });
+
+  it('should sanitize option parameter to prevent directory traversal', async (): Promise<void> => {
+    (fs.existsSync as jest.Mock).mockReturnValue(true);
+    const movies: Movie[] = [
+      {
+        title: 'Good Movie',
+        year: '2000',
+        directors: 'A',
+        metascore: 90,
+        imdbLink: '',
+      },
+    ];
+
+    await storage.save(movies, '../../malicious-dir');
+
+    expect(createObjectCsvWriter).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.stringContaining(
+          path.join('test-output', 'malicious-dir')
+        ),
+      })
+    );
   });
 });
