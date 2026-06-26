@@ -164,6 +164,48 @@ describe('ExtractCatalogUseCase', () => {
       );
     });
 
+    it('should URL-encode directorSlug and yearOrDecade parameters in URL', async () => {
+      const configDirector: ScrapingConfiguration = {
+        option: 'director',
+        directorSlug: 'christopher nolan',
+        yearOrDecade: '',
+        pages: 1,
+      };
+      mockCatalogProvider.exploreCatalogPage.mockResolvedValueOnce([]);
+
+      await useCase.execute(configDirector);
+
+      expect(mockCatalogProvider.exploreCatalogPage).toHaveBeenCalledWith(
+        'https://letterboxd.com/director/christopher%20nolan/'
+      );
+
+      const configYear: ScrapingConfiguration = {
+        option: 'year',
+        yearOrDecade: '2020/2021',
+        pages: 1,
+      };
+      mockCatalogProvider.exploreCatalogPage.mockResolvedValueOnce([]);
+
+      await useCase.execute(configYear);
+
+      expect(mockCatalogProvider.exploreCatalogPage).toHaveBeenCalledWith(
+        'https://letterboxd.com/films/year/2020%2F2021/'
+      );
+
+      const configDecade: ScrapingConfiguration = {
+        option: 'decade',
+        yearOrDecade: '1990/2000',
+        pages: 1,
+      };
+      mockCatalogProvider.exploreCatalogPage.mockResolvedValueOnce([]);
+
+      await useCase.execute(configDecade);
+
+      expect(mockCatalogProvider.exploreCatalogPage).toHaveBeenCalledWith(
+        'https://letterboxd.com/films/popular/decade/1990%2F2000s/'
+      );
+    });
+
     it('should fallback to createFallbackMovie on exceeding retries', async () => {
       const config: ScrapingConfiguration = {
         option: 'popular',

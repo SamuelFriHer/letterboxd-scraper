@@ -57,15 +57,18 @@ export class ExtractCatalogUseCase {
     page: number
   ): string {
     if (config.option === 'director' && config.directorSlug) {
-      return `https://letterboxd.com/director/${config.directorSlug}/`;
+      const encodedSlug = encodeURIComponent(config.directorSlug);
+      return `https://letterboxd.com/director/${encodedSlug}/`;
     }
 
     let url = 'https://letterboxd.com/films/';
 
     if (config.option === 'year') {
-      url += `year/${config.yearOrDecade}/`;
+      const encodedYear = encodeURIComponent(config.yearOrDecade);
+      url += `year/${encodedYear}/`;
     } else if (config.option === 'decade') {
-      url += `popular/decade/${config.yearOrDecade}s/`;
+      const encodedDecade = encodeURIComponent(config.yearOrDecade);
+      url += `popular/decade/${encodedDecade}s/`;
     } else {
       url += 'popular/';
     }
