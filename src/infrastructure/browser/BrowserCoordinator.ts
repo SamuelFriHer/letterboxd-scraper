@@ -10,8 +10,25 @@ puppeteerExtra.use(StealthPlugin());
  * Coordinates and manages the lifecycle of the Puppeteer browser instance.
  */
 export class BrowserCoordinator {
+  private static readonly OPTIMIZED_BLOCKED_RESOURCES: readonly string[] = [
+    'image',
+    'media',
+    'font',
+    'stylesheet',
+  ];
+
+  private static readonly DETAILS_BLOCKED_RESOURCES: readonly string[] = [
+    'image',
+    'media',
+    'font',
+    'stylesheet',
+    'script',
+    'xhr',
+    'fetch',
+  ];
+
   private browser: Browser | null = null;
-  private config = AppConfiguration.getInstance();
+  private config: AppConfiguration = AppConfiguration.getInstance();
 
   constructor(private readonly logger?: LoggerService) {}
 
@@ -53,11 +70,11 @@ export class BrowserCoordinator {
    * @returns A promise resolving to the actively intercepted Puppeteer page.
    */
   public async openOptimizedPage(): Promise<Page> {
-    const page = await this.getBrowser().newPage();
+    const page: Page = await this.getBrowser().newPage();
     await page.setRequestInterception(true);
-    page.on('request', (request: HTTPRequest) => {
-      const type = request.resourceType();
-      if (['image', 'media', 'font', 'stylesheet'].includes(type)) {
+    page.on('request', (request: HTTPRequest): void => {
+      const type: string = request.resourceType();
+      if (BrowserCoordinator.OPTIMIZED_BLOCKED_RESOURCES.includes(type)) {
         request.abort();
       } else {
         request.continue();
@@ -71,20 +88,11 @@ export class BrowserCoordinator {
    * @returns A promise resolving to the completely stripped Puppeteer page.
    */
   public async openDetailsOptimizedPage(): Promise<Page> {
-    const page = await this.getBrowser().newPage();
+    const page: Page = await this.getBrowser().newPage();
     await page.setRequestInterception(true);
-    page.on('request', (request: HTTPRequest) => {
-      const type = request.resourceType();
-      const blocked = [
-        'image',
-        'media',
-        'font',
-        'stylesheet',
-        'script',
-        'xhr',
-        'fetch',
-      ];
-      if (blocked.includes(type)) {
+    page.on('request', (request: HTTPRequest): void => {
+      const type: string = request.resourceType();
+      if (BrowserCoordinator.DETAILS_BLOCKED_RESOURCES.includes(type)) {
         request.abort();
       } else {
         request.continue();
@@ -100,11 +108,11 @@ export class BrowserCoordinator {
   public async cleanupPage(): Promise<void> {
     if (!this.browser) return;
     try {
-      const pages = await this.browser.pages();
-      const lastPage = pages[pages.length - 1];
+      const pages: Page[] = await this.browser.pages();
+      const lastPage: Page | undefined = pages[pages.length - 1];
       if (lastPage) await lastPage.close();
-    } catch (error) {
-      const message =
+    } catch (error: unknown) {
+      const message: string =
         error instanceof Error ? error.stack || error.message : String(error);
       if (this.logger) {
         this.logger.error(`Error during page cleanup: ${message}`);
@@ -122,7 +130,7 @@ export class BrowserCoordinator {
    */
   public chunk<T>(array: T[], size: number): T[][] {
     const result: T[][] = [];
-    for (let i = 0; i < array.length; i += size) {
+    for (let i: number = 0; i < array.length; i += size) {
       result.push(array.slice(i, i + size));
     }
     return result;
