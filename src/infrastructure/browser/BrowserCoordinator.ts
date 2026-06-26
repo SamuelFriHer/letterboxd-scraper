@@ -135,19 +135,29 @@ export class BrowserCoordinator {
    * @throws Error upon protocol or domain mismatch.
    */
   public validateSafeUrl(url: string, allowedDomain: string): void {
+    let parsedUrl: URL;
     try {
-      const parsedUrl = new URL(url);
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        throw new Error(`Protocolo inseguro: ${parsedUrl.protocol}`);
-      }
-      if (
-        parsedUrl.hostname !== allowedDomain &&
-        !parsedUrl.hostname.endsWith(`.${allowedDomain}`)
-      ) {
-        throw new Error(`Dominio no permitido: ${parsedUrl.hostname}`);
-      }
-    } catch (_error) {
-      throw new Error(`URL insegura o inválida: ${url}`, { cause: _error });
+      parsedUrl = new URL(url);
+    } catch (error: unknown) {
+      const message: string =
+        error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid URL: ${url}. Details: ${message}`, {
+        cause: error,
+      });
+    }
+
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new Error(`Insecure protocol: ${parsedUrl.protocol}`);
+    }
+
+    const exactDomain: string = allowedDomain.startsWith('.')
+      ? allowedDomain.slice(1)
+      : allowedDomain;
+    if (
+      parsedUrl.hostname !== exactDomain &&
+      !parsedUrl.hostname.endsWith(`.${exactDomain}`)
+    ) {
+      throw new Error(`Domain not allowed: ${parsedUrl.hostname}`);
     }
   }
 }

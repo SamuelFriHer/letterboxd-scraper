@@ -184,18 +184,34 @@ describe('BrowserCoordinator', () => {
     expect(() =>
       coordinator.validateSafeUrl('https://sub.example.com', 'example.com')
     ).not.toThrow();
+
+    expect(() =>
+      coordinator.validateSafeUrl('https://sub.example.com', '.example.com')
+    ).not.toThrow();
+  });
+
+  it('should throw on invalid URL structure', () => {
+    expect(() =>
+      coordinator.validateSafeUrl('not-a-url', 'example.com')
+    ).toThrow(/Invalid URL: not-a-url\. Details: (TypeError: )?Invalid URL/);
   });
 
   it('should throw on unsafe protocol', () => {
     expect(() =>
       coordinator.validateSafeUrl('ftp://example.com', 'example.com')
-    ).toThrow('URL insegura o inválida: ftp://example.com');
+    ).toThrow('Insecure protocol: ftp:');
   });
 
   it('should throw on mismatched domain', () => {
     expect(() =>
       coordinator.validateSafeUrl('https://malicious.com', 'example.com')
-    ).toThrow('URL insegura o inválida: https://malicious.com');
+    ).toThrow('Domain not allowed: malicious.com');
+  });
+
+  it('should throw on domains ending with the allowedDomain but not as a proper subdomain', () => {
+    expect(() =>
+      coordinator.validateSafeUrl('https://attackerexample.com', 'example.com')
+    ).toThrow('Domain not allowed: attackerexample.com');
   });
 
   it('should intercept requests in openOptimizedPage', async () => {
