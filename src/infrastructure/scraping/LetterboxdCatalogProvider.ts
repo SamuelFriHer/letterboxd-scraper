@@ -106,12 +106,10 @@ export class LetterboxdCatalogProvider implements CatalogProvider {
 
   private async extractImdbLink(page: Page): Promise<string> {
     let link = await page.evaluate(() => {
-      const el = document.querySelector("a[href*='imdb.com/title']");
-      if (el) return el.getAttribute('href') || '';
-
-      const links = Array.from(document.querySelectorAll('a'));
-      const imdbFound = links.find((a) => a.href.includes('imdb.com/title/'));
-      return imdbFound?.href || '';
+      const el = document.querySelector(
+        'a[href*="imdb.com/title/"], a[href*="imdb.com/title"]'
+      );
+      return el ? el.getAttribute('href') || '' : '';
     });
 
     if (link && link.startsWith('/')) {

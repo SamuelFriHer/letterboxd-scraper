@@ -15,6 +15,8 @@ export class ImdbRatingProvider implements RatingProvider {
   private readonly imdbConcurrencyLimit = 2;
   private activeImdbRequests = 0;
   private imdbQueue: (() => void)[] = [];
+  private imdbQueueOffset = 0;
+  private cookieWaiters: (() => void)[] = [];
   private extractor = new ImdbExtractor();
 
   constructor(private browserCoordinator: BrowserCoordinator) {}
@@ -113,25 +115,17 @@ export class ImdbRatingProvider implements RatingProvider {
 
   private async ensureImdbCookies(): Promise<void> {
     if (this.imdbCookiesHandled || this.imdbCookiesAttempted) return;
-    while (this.isHandlingCookies) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
+    if (this.isHandlingCookies) {
+      return new Promise<void>((resolve) => {
+        this.cookieWaiters.push(resolve);
+      });
     }
-    if (this.imdbCookiesHandled || this.imdbCookiesAttempted) return;
 
     this.isHandlingCookies = true;
     let page: Page | null = null;
     try {
       page = await this.browserCoordinator.getBrowser().newPage();
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
-      await page.goto('https://www.imdb.com/', {
-        waitUntil: 'domcontentloaded',
-        timeout: 30000,
-      });
-      const consentBtn = await page.$('[data-testid="accept-button"]');
-      if (consentBtn) {
-        await consentBtn.click();
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
+      await this.fetchAndAcceptCookies(page);
       this.imdbCookiesHandled = true;
     } catch (error) {
       if (error instanceof Error) {
@@ -143,6 +137,24 @@ export class ImdbRatingProvider implements RatingProvider {
         await page.close();
       }
       this.isHandlingCookies = false;
+      const pendingWaiters = this.cookieWaiters;
+      this.cookieWaiters = [];
+      for (const resolve of pendingWaiters) {
+        resolve();
+      }
+    }
+  }
+
+  private async fetchAndAcceptCookies(page: Page): Promise<void> {
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+    await page.goto('https://www.imdb.com/', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
+    const consentBtn = await page.$('[data-testid="accept-button"]');
+    if (consentBtn) {
+      await consentBtn.click();
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
   }
 
@@ -151,15 +163,23 @@ export class ImdbRatingProvider implements RatingProvider {
       this.activeImdbRequests++;
       return;
     }
-    return new Promise((r) => this.imdbQueue.push(r));
+    return new Promise<void>((resolve) => {
+      this.imdbQueue.push(resolve);
+    });
   }
 
   private releaseImdbPermit(): void {
     this.activeImdbRequests--;
-    if (this.imdbQueue.length > 0) {
+    if (this.imdbQueueOffset < this.imdbQueue.length) {
       this.activeImdbRequests++;
-      const next = this.imdbQueue.shift();
-      if (next) next();
+      const next = this.imdbQueue[this.imdbQueueOffset++];
+      if (next) {
+        next();
+      }
+      if (this.imdbQueueOffset === this.imdbQueue.length) {
+        this.imdbQueue = [];
+        this.imdbQueueOffset = 0;
+      }
     }
   }
 }

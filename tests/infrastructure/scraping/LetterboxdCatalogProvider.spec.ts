@@ -352,7 +352,7 @@ describe('LetterboxdCatalogProvider', () => {
       }
     });
 
-    it('should extract IMDb link using querySelector or matching all links', async () => {
+    it('should extract IMDb link using querySelector', async () => {
       (mockPage.evaluate as jest.Mock).mockResolvedValueOnce(
         'https://www.imdb.com/title/tt0133093/'
       );
@@ -378,29 +378,18 @@ describe('LetterboxdCatalogProvider', () => {
             .mockReturnValue('https://www.imdb.com/title/tt0133093/'),
         };
         const mockQuerySelector = jest.fn().mockReturnValue(mockEl);
-        const mockQuerySelectorAll = jest.fn().mockReturnValue([]);
 
         globalWithDoc.document = {
           querySelector: mockQuerySelector,
-          querySelectorAll: mockQuerySelectorAll,
         };
 
         let result = extractImdbLinkFn();
         expect(result).toBe('https://www.imdb.com/title/tt0133093/');
         expect(mockQuerySelector).toHaveBeenCalledWith(
-          "a[href*='imdb.com/title']"
+          'a[href*="imdb.com/title/"], a[href*="imdb.com/title"]'
         );
 
-        const mockLink1 = { href: 'https://letterboxd.com' };
-        const mockLink2 = { href: 'https://www.imdb.com/title/tt0133093/' };
         mockQuerySelector.mockReturnValue(null);
-        mockQuerySelectorAll.mockReturnValue([mockLink1, mockLink2]);
-
-        result = extractImdbLinkFn();
-        expect(result).toBe('https://www.imdb.com/title/tt0133093/');
-        expect(mockQuerySelectorAll).toHaveBeenCalledWith('a');
-
-        mockQuerySelectorAll.mockReturnValue([mockLink1]);
         result = extractImdbLinkFn();
         expect(result).toBe('');
       } finally {

@@ -43,12 +43,12 @@ export class ImdbExtractor {
           }
           const dataIsland = document.querySelector('script#__NEXT_DATA__');
           if (dataIsland && dataIsland.innerHTML.length > 1000) {
-            try {
-              JSON.parse(dataIsland.innerHTML);
-              return true;
-            } catch (_e) {
-              return false;
-            }
+            const content = dataIsland.innerHTML.trim();
+            return (
+              content.startsWith('{') &&
+              content.endsWith('}') &&
+              content.includes('"metacritic"')
+            );
           }
           return false;
         },
