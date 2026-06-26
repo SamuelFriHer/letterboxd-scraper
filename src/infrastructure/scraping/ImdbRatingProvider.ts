@@ -1,4 +1,4 @@
-import { Page, HTTPRequest } from 'puppeteer';
+import { Page } from 'puppeteer';
 import { RatingProvider } from '../../domain/ports/RatingProvider';
 import { TaskLoggerService } from '../../domain/ports/LoggerService';
 import { BrowserCoordinator } from '../browser/BrowserCoordinator';
@@ -89,13 +89,10 @@ export class ImdbRatingProvider implements RatingProvider {
     await this.ensureImdbCookies();
     await this.acquireImdbPermit();
 
-    const browser = this.browserCoordinator.getBrowser();
     let page: Page | null = null;
 
     try {
-      page = await browser.newPage();
-      await page.setRequestInterception(true);
-      this.setupPageInterception(page);
+      page = await this.browserCoordinator.openOptimizedPage();
       await page.setUserAgent(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/110.0.0.0 Safari/537.36'
       );
@@ -109,17 +106,6 @@ export class ImdbRatingProvider implements RatingProvider {
       this.releaseImdbPermit();
       throw error;
     }
-  }
-
-  private setupPageInterception(page: Page): void {
-    page.on('request', (request: HTTPRequest) => {
-      const t = request.resourceType();
-      if (['image', 'media', 'font', 'stylesheet'].includes(t)) {
-        request.abort();
-      } else {
-        request.continue();
-      }
-    });
   }
 
   private async ensureImdbCookies(): Promise<void> {

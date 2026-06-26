@@ -41,6 +41,7 @@ describe('ImdbRatingProvider', () => {
       validateSafeUrl: jest.fn(),
       getBrowser: jest.fn().mockReturnValue(mockBrowser),
       cleanupPage: jest.fn().mockResolvedValue(undefined),
+      openOptimizedPage: jest.fn().mockResolvedValue(mockPage),
     } as unknown as jest.Mocked<BrowserCoordinator>;
 
     mockTaskLogger = {
