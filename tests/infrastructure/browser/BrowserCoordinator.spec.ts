@@ -261,9 +261,9 @@ describe('BrowserCoordinator', () => {
     const mockRequestAbort = jest.fn();
     const mockRequestContinue = jest.fn();
 
-    // Simulate Script request
+    // Simulate Font request
     requestHandler({
-      resourceType: () => 'script',
+      resourceType: () => 'font',
       abort: mockRequestAbort,
       continue: mockRequestContinue,
     } as unknown as HTTPRequest);

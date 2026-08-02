@@ -22,9 +22,6 @@ export class BrowserCoordinator {
     'media',
     'font',
     'stylesheet',
-    'script',
-    'xhr',
-    'fetch',
   ];
 
   private browser: Browser | null = null;
