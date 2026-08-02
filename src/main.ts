@@ -2,7 +2,7 @@ import { UserInputController } from './presentation/cli/UserInputController';
 import { BrowserCoordinator } from './infrastructure/browser/BrowserCoordinator';
 import { ConsoleLogger } from './infrastructure/logging/ConsoleLogger';
 import { LetterboxdCatalogProvider } from './infrastructure/scraping/LetterboxdCatalogProvider';
-import { ImdbRatingProvider } from './infrastructure/scraping/ImdbRatingProvider';
+import { OmdbRatingProvider } from './infrastructure/scraping/OmdbRatingProvider';
 import { CsvMovieStorage } from './infrastructure/storage/CsvMovieStorage';
 import { ExtractCatalogUseCase } from './application/ExtractCatalogUseCase';
 
@@ -24,7 +24,7 @@ async function bootstrap() {
     logger
   );
 
-  const ratingProvider = new ImdbRatingProvider(browserCoordinator);
+  const ratingProvider = new OmdbRatingProvider();
 
   const storageProvider = new CsvMovieStorage();
 
