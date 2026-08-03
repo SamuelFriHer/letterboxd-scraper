@@ -4,6 +4,7 @@ import { createObjectCsvWriter } from 'csv-writer';
 import { MovieStorage } from '../../domain/ports/MovieStorage';
 import { Movie } from '../../domain/models/Movie';
 import { AppConfiguration } from '../../config/AppConfiguration';
+import { CsvSanitizer } from '../../utils/CsvSanitizer';
 
 /**
  * A storage execution implementation that saves scraped movies to CSV files.
@@ -36,24 +37,14 @@ export class CsvMovieStorage implements MovieStorage {
     // Sanitize data against CSV Formula Injection
     const sanitizedMovies = filteredMovies.map((m) => ({
       ...m,
-      title: this.sanitizeCsvField(m.title),
-      directors: this.sanitizeCsvField(m.directors),
-      year: this.sanitizeCsvField(m.year),
-      imdbLink: this.sanitizeCsvField(m.imdbLink),
+      title: CsvSanitizer.sanitizeField(m.title),
+      directors: CsvSanitizer.sanitizeField(m.directors),
+      year: CsvSanitizer.sanitizeField(m.year),
+      imdbLink: CsvSanitizer.sanitizeField(m.imdbLink),
     }));
 
     const filename = this.generateFilename(option, identifier);
     await this.writeCsv(outputDir, filename, sanitizedMovies);
-  }
-
-  private sanitizeCsvField(field: string): string {
-    if (!field) return field;
-    // Prevent CSV Formula Injection by prepending a single quote
-    // if the field starts with =, +, -, @, \t, or \r, even with leading spaces
-    if (/^[\s]*[=+\-@\t\r]/.test(field)) {
-      return `'${field}`;
-    }
-    return field;
   }
 
   private getOutputDir(option: string): string {
