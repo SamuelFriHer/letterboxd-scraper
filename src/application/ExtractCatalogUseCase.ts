@@ -1,4 +1,5 @@
 import { Movie } from '../domain/models/Movie';
+import { MovieFactory } from '../domain/factories/MovieFactory';
 import { ScrapingConfiguration } from '../domain/models/ScrapingConfiguration';
 import { CatalogProvider } from '../domain/ports/CatalogProvider';
 import { RatingProvider } from '../domain/ports/RatingProvider';
@@ -144,13 +145,7 @@ export class ExtractCatalogUseCase {
       );
     }
 
-    const completeMovie: Movie = {
-      title: detailData.title || slug.replace(/-/g, ' '),
-      year: detailData.year || 'Desconocido',
-      directors: detailData.directors || 'Desconocido',
-      imdbLink: detailData.imdbLink || '',
-      metascore,
-    };
+    const completeMovie = MovieFactory.create(slug, detailData, metascore);
 
     return { movie: completeMovie, logger: logger };
   }
@@ -160,13 +155,7 @@ export class ExtractCatalogUseCase {
     logger: TaskLoggerService
   ): { movie: Movie; logger: TaskLoggerService } {
     return {
-      movie: {
-        title: slug.replace(/-/g, ' '),
-        year: 'Desconocido',
-        directors: 'Desconocido',
-        imdbLink: '',
-        metascore: -1,
-      },
+      movie: MovieFactory.create(slug),
       logger,
     };
   }
