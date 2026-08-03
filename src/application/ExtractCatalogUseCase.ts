@@ -10,6 +10,7 @@ import {
 } from '../domain/ports/LoggerService';
 import { BrowserCoordinator } from '../infrastructure/browser/BrowserCoordinator';
 import { AppConfiguration } from '../config/AppConfiguration';
+import { ArrayUtils } from '../utils/ArrayUtils';
 
 /**
  * Application use case orchestrating the complete catalog scraping workflow.
@@ -86,7 +87,7 @@ export class ExtractCatalogUseCase {
     movies: Movie[]
   ): Promise<void> {
     const BATCH_SIZE = 5;
-    const batches = this.browserCoordinator.chunk(movieLinks, BATCH_SIZE);
+    const batches = ArrayUtils.chunk(movieLinks, BATCH_SIZE);
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];

@@ -166,12 +166,6 @@ describe('BrowserCoordinator', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('should chunk an array correctly', () => {
-    const array = [1, 2, 3, 4, 5];
-    const chunks = coordinator.chunk(array, 2);
-    expect(chunks).toEqual([[1, 2], [3, 4], [5]]);
-  });
-
   it('should validate safe URLs correctly', () => {
     expect(() =>
       coordinator.validateSafeUrl('https://example.com', 'example.com')

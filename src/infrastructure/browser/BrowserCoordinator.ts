@@ -120,20 +120,6 @@ export class BrowserCoordinator {
   }
 
   /**
-   * Splits an array of elements into consecutive batches of a deterministic size.
-   * @param array The collection to be portioned.
-   * @param size The maximum integer magnitude for each output subgroup.
-   * @returns A matrix consisting of the sequential subgroups.
-   */
-  public chunk<T>(array: T[], size: number): T[][] {
-    const result: T[][] = [];
-    for (let i: number = 0; i < array.length; i += size) {
-      result.push(array.slice(i, i + size));
-    }
-    return result;
-  }
-
-  /**
    * Validates if a target URL safely belongs strictly to the targeted environment.
    * @param url The raw destination address.
    * @param allowedDomain A string boundary denoting the top-level allowed authority.

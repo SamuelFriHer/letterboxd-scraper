@@ -108,7 +108,6 @@ describe('LetterboxdCatalogProvider', () => {
       );
     });
 
-
     it('should throw error if waitForSelector times out', async () => {
       (mockPage.waitForSelector as jest.Mock).mockRejectedValueOnce(
         new Error('Timeout')

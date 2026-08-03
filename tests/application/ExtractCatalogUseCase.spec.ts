@@ -24,12 +24,6 @@ describe('ExtractCatalogUseCase', () => {
       startBrowser: jest.fn(),
       stopBrowser: jest.fn(),
       cleanupPage: jest.fn(),
-      chunk: jest.fn().mockImplementation((arr, size) => {
-        const res = [];
-        for (let i = 0; i < arr.length; i += size)
-          res.push(arr.slice(i, i + size));
-        return res;
-      }),
     } as unknown as jest.Mocked<BrowserCoordinator>;
 
     mockCatalogProvider = {
