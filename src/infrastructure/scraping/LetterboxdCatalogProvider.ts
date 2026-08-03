@@ -65,8 +65,12 @@ export class LetterboxdCatalogProvider implements CatalogProvider {
         await consentButton.click();
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
-    } catch (_e) {
-      // Ignore errors when cookies are not present
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `⚠️ Error processing cookie consent dialog: ${errorMessage}`
+      );
     }
   }
 

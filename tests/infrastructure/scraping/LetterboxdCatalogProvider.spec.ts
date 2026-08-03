@@ -91,6 +91,24 @@ describe('LetterboxdCatalogProvider', () => {
       );
     });
 
+    it('should log warning if cookie consent handling throws an error', async () => {
+      (mockPage.$ as jest.Mock).mockRejectedValueOnce(
+        new Error('Selector error')
+      );
+      (mockPage.evaluate as jest.Mock).mockResolvedValueOnce([]);
+
+      await provider.exploreCatalogPage(
+        'https://letterboxd.com/films/popular/'
+      );
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Error processing cookie consent dialog: Selector error'
+        )
+      );
+    });
+
+
     it('should throw error if waitForSelector times out', async () => {
       (mockPage.waitForSelector as jest.Mock).mockRejectedValueOnce(
         new Error('Timeout')
